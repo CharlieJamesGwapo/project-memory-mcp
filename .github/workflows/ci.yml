@@ -29,3 +29,5 @@ jobs:
           python-version: '3.13'
       - name: Check archive inventory
         run: python scripts/check-package.py target/package/project-memory-mcp-0.1.0.crate
+      - name: Release archive regression tests
+        run: python -m unittest discover -s tests -p '*_test.py'

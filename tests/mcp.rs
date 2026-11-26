@@ -135,3 +135,51 @@ async fn environment_database_path_and_protocol_stdout_work_outside_repository()
     assert!(path.is_file());
     client.cancel().await.unwrap();
 }
+
+#[tokio::test]
+async fn export_bounds_the_actual_serialized_tool_result_and_always_advances() {
+    let temp = tempfile::tempdir().unwrap();
+    let client = client(&temp.path().join("export.sqlite")).await;
+    let created = client
+        .call_tool(
+            CallToolRequestParams::new("create_project").with_arguments(
+                json!({"name":"Export budget","purpose":"Escaping"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+    let id = created.structured_content.unwrap()["id"].clone();
+    for _ in 0..9 {
+        client.call_tool(CallToolRequestParams::new("save_note").with_arguments(json!({"project_id":id,"title":"Export","content":format!("a{}","\n".repeat(15999)),"author_type":"assistant"}).as_object().unwrap().clone())).await.unwrap();
+    }
+    let mut args = json!({"project_id":id});
+    let mut count = 0;
+    loop {
+        let result = client
+            .call_tool(
+                CallToolRequestParams::new("export_project")
+                    .with_arguments(args.as_object().unwrap().clone()),
+            )
+            .await
+            .unwrap();
+        assert_ne!(result.is_error, Some(true));
+        assert!(
+            serde_json::to_vec(&result).unwrap().len() <= 256 * 1024,
+            "actual serialized MCP tool result exceeds 256 KiB"
+        );
+        let value = result.structured_content.unwrap();
+        let n = value["record_ids"].as_array().unwrap().len();
+        assert!(n > 0, "each nonempty page must advance");
+        count += n;
+        if value["next_cursor"].is_null() {
+            break;
+        }
+        args["cursor"] = value["next_cursor"].clone();
+        assert!(count <= 9, "cursor loop must terminate");
+    }
+    assert_eq!(count, 9);
+    client.cancel().await.unwrap();
+}

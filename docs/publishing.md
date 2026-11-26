@@ -105,8 +105,9 @@ Windows x64. It uploads workflow artifacts; it does not create a public GitHub
 Release or publish crates or Registry metadata.
 
 After successful CI, create the GitHub Release and attach the appropriate
-artifacts and checksums. Verify executable permissions after downloading ZIP
-artifacts on Unix. Signing/notarization is not configured. This local build
+artifacts and checksums. Unix binaries are inside tar.gz files so executable
+permissions survive GitHub's outer artifact ZIP; extract the inner archive before
+running. Windows binaries are inside ZIP files. Signing/notarization is not configured. This local build
 only verifies the current machine's platform; other platforms require successful
 CI before their binaries should be advertised as tested.
 

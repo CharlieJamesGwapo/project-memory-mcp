@@ -34,6 +34,16 @@ impl Store {
                 "database path must be absolute".into(),
             ));
         }
+        match fs::symlink_metadata(path) {
+            Ok(metadata) if !metadata.file_type().is_file() => {
+                return Err(MemoryError::Validation(
+                    "database path must be a regular file, not a directory or symlink".into(),
+                ));
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
         if let Some(parent) = path.parent() {
             #[cfg(unix)]
             {
@@ -58,25 +68,44 @@ impl Store {
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(e.into()),
         }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
-        }
-        Self::initialize(Connection::open(path)?)
+        Self::initialize(Connection::open_with_flags(
+            path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE,
+        )?)
     }
 
     fn initialize(conn: Connection) -> Result<Self> {
         conn.busy_timeout(Duration::from_secs(5))?;
+        let application: i64 = conn.query_row("PRAGMA application_id", [], |r| r.get(0))?;
         let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        if version > 1 {
+        let objects: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*'",
+            [],
+            |r| r.get(0),
+        )?;
+        let initialize = application == 0 && version == 0 && objects == 0;
+        // PMCP is an identity marker, not authentication. Never adopt another app's schema.
+        if !initialize && application != 0x504d4350 {
+            return Err(MemoryError::ForeignDatabase);
+        }
+        if !initialize && version > 1 {
             return Err(MemoryError::NewerSchema);
+        }
+        if !initialize {
+            if version != 1 {
+                return Err(MemoryError::ForeignDatabase);
+            }
+            conn.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects LIMIT 0")?;
+            conn.prepare(
+                "SELECT seq,id,project_id,kind,data,created_at,supersedes FROM records LIMIT 0",
+            )?;
         }
         conn.execute_batch(
             "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
         )?;
-        conn.execute_batch(
-            "BEGIN IMMEDIATE;
+        if initialize {
+            conn.execute_batch(
+                "BEGIN IMMEDIATE;
             CREATE TABLE IF NOT EXISTS projects (
               seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
               name TEXT NOT NULL, purpose TEXT NOT NULL, directory TEXT, created_at TEXT NOT NULL
@@ -92,9 +121,11 @@ impl Store {
             );
             CREATE INDEX IF NOT EXISTS records_project_seq ON records(project_id,seq DESC);
             CREATE INDEX IF NOT EXISTS records_project_kind ON records(project_id,kind,seq DESC);
+            PRAGMA application_id=1347240784;
             PRAGMA user_version=1;
             COMMIT;",
-        )?;
+            )?;
+        }
         Ok(Self { conn })
     }
 
@@ -299,8 +330,9 @@ impl Store {
     ) -> Result<Vec<RecordRow>> {
         // Only hard-coded filters from the methods below enter this SQL fragment.
         let sql = format!(
-            "SELECT r.*, (SELECT id FROM records s WHERE s.supersedes=r.id) AS superseded_by FROM records r WHERE {filter} AND r.seq<? AND r.seq<=? ORDER BY r.seq DESC LIMIT ?"
+            "SELECT r.*, (SELECT id FROM records s WHERE s.supersedes=r.id AND s.seq<=?) AS superseded_by FROM records r WHERE {filter} AND r.seq<? AND r.seq<=? ORDER BY r.seq DESC LIMIT ?"
         );
+        bindings.insert(0, SqlValue::Integer(cursor.until));
         bindings.extend([
             SqlValue::Integer(cursor.after),
             SqlValue::Integer(cursor.until),
@@ -320,7 +352,28 @@ impl Store {
             .or_else(|| value.get("summary"))
             .and_then(Value::as_str)
             .unwrap_or("");
-        json!({"id":value["id"], "project_id":value["project_id"], "kind":value["kind"], "created_at":value["created_at"], "author_type":value["author_type"], "title":value.get("title"), "preview":text.chars().take(300).collect::<String>(), "content_truncated":text.chars().count()>300, "supersedes":value.get("supersedes"), "superseded_by":value["superseded_by"]})
+        let mut preview = json!({"id":value["id"], "project_id":value["project_id"], "kind":value["kind"], "created_at":value["created_at"], "author_type":value["author_type"], "title":value.get("title"), "preview":text.chars().take(300).collect::<String>(), "content_truncated":text.chars().count()>300, "full_record_required":true, "supersedes":value.get("supersedes"), "superseded_by":value["superseded_by"]});
+        if let Some(actions) = value.get("next_actions").and_then(Value::as_array) {
+            preview["next_actions"] = json!(
+                actions
+                    .iter()
+                    .take(5)
+                    .map(|v| v
+                        .as_str()
+                        .unwrap_or("")
+                        .chars()
+                        .take(300)
+                        .collect::<String>())
+                    .collect::<Vec<_>>()
+            );
+            preview["next_actions_truncated"] = json!(
+                actions.len() > 5
+                    || actions
+                        .iter()
+                        .any(|v| v.as_str().unwrap_or("").chars().count() > 300)
+            );
+        }
+        preview
     }
 
     fn page_records(rows: &[RecordRow], limit: u32, cursor: &Cursor) -> Value {
@@ -349,11 +402,15 @@ impl Store {
         let filter = if p.include_superseded {
             "r.project_id=?"
         } else {
-            "r.project_id=? AND NOT EXISTS(SELECT 1 FROM records s WHERE s.supersedes=r.id)"
+            "r.project_id=? AND NOT EXISTS(SELECT 1 FROM records s WHERE s.supersedes=r.id AND s.seq<=?)"
         };
-        let rows = self.rows(filter, vec![p.project_id.clone().into()], &cursor, p.limit)?;
-        let fresh = Cursor::start("headlines", None, high)?;
-        let decisions = self.rows("r.project_id=? AND r.kind='decision' AND NOT EXISTS(SELECT 1 FROM records s WHERE s.supersedes=r.id)",vec![p.project_id.clone().into()],&fresh,20)?;
+        let mut bindings = vec![p.project_id.clone().into()];
+        if !p.include_superseded {
+            bindings.push(SqlValue::Integer(cursor.until));
+        }
+        let rows = self.rows(filter, bindings, &cursor, p.limit)?;
+        let fresh = Cursor::start("headlines", None, cursor.until)?;
+        let decisions = self.rows("r.project_id=? AND r.kind='decision' AND NOT EXISTS(SELECT 1 FROM records s WHERE s.supersedes=r.id AND s.seq<=?)",vec![p.project_id.clone().into(),SqlValue::Integer(cursor.until)],&fresh,20)?;
         let handoffs = self.rows(
             "r.project_id=? AND r.kind='handoff'",
             vec![p.project_id.into()],
@@ -372,15 +429,8 @@ impl Store {
         self.project(&p.project_id)?;
         let scope = json!(["search_notes", p.project_id, p.query]).to_string();
         let cursor = Cursor::start(&scope, p.cursor.as_deref(), self.high_water("records")?)?;
-        let mut pattern = String::from("%");
-        for c in p.query.chars() {
-            if matches!(c, '%' | '_' | '\\') {
-                pattern.push('\\');
-            }
-            pattern.push(c);
-        }
-        pattern.push('%');
-        let rows = self.rows("r.project_id=? AND r.kind='note' AND (json_extract(r.data,'$.title') LIKE ? ESCAPE '\\' OR json_extract(r.data,'$.content') LIKE ? ESCAPE '\\')",vec![p.project_id.into(),pattern.clone().into(),pattern.into()],&cursor,p.limit)?;
+        // instr is length-aware, including embedded NUL; lower folds ASCII only.
+        let rows = self.rows("r.project_id=? AND r.kind='note' AND (instr(lower(json_extract(r.data,'$.title')),lower(?))>0 OR instr(lower(json_extract(r.data,'$.content')),lower(?))>0)",vec![p.project_id.into(),p.query.clone().into(),p.query.into()],&cursor,p.limit)?;
         Ok(Self::page_records(&rows, p.limit, &cursor))
     }
 
@@ -400,22 +450,31 @@ impl Store {
         let mut consumed = 0;
         for row in rows.iter().take(p.limit as usize) {
             records.push(row.value.clone());
-            if crate::export::markdown(&project, &records).len() > 256 * 1024 {
+            let candidate = crate::export::page(
+                &p.project_id,
+                &project,
+                &records,
+                Some(cursor.encode_after(row.seq)),
+            );
+            if crate::output::export_size(&candidate) > crate::output::EXPORT_RESULT_BUDGET {
                 records.pop();
                 break;
             }
             consumed += 1;
         }
         let more = rows.len() > consumed;
+        if more && consumed == 0 {
+            return Err(MemoryError::Validation(
+                "stored record exceeds export budget; retrieve it with get_record".into(),
+            ));
+        }
         let next = if more {
             rows.get(consumed.saturating_sub(1))
                 .map(|r| cursor.encode_after(r.seq))
         } else {
             None
         };
-        Ok(
-            json!({"project_id":p.project_id,"markdown":crate::export::markdown(&project,&records),"record_ids":records.iter().map(|r|&r["id"]).collect::<Vec<_>>(),"next_cursor":next,"truncated":more}),
-        )
+        Ok(crate::export::page(&p.project_id, &project, &records, next))
     }
 
     fn delete(&self, p: DeleteProject) -> Result<Value> {

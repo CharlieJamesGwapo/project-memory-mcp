@@ -34,7 +34,7 @@ impl MemoryServer {
             store.execute(operation,input).map_err(|e|e.payload())
         }).await;
         match result {
-            Ok(Ok(value)) => CallToolResult::structured(value),
+            Ok(Ok(value)) => crate::output::success(operation, value),
             Ok(Err(error)) => CallToolResult::structured_error(error),
             Err(_) => CallToolResult::structured_error(
                 json!({"error":{"code":"INTERNAL_ERROR","message":"Operation failed; restart the server"}}),
@@ -111,7 +111,7 @@ impl MemoryServer {
     }
 
     #[tool(
-        description = "Search literal substrings of notes in one project. Wildcards are escaped. ASCII case-insensitive; other Unicode is exact. Results are previews; use get_record for full contents.",
+        description = "Search literal substrings of notes in one project. Wildcards have no special meaning. ASCII case-insensitive; other Unicode is exact. Results are previews; use get_record for full contents.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

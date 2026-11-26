@@ -16,6 +16,10 @@ pub enum MemoryError {
     Io(#[from] std::io::Error),
     #[error("Database schema is newer than this application; upgrade the application")]
     NewerSchema,
+    #[error(
+        "Database belongs to another application or has an unsupported identity; choose a new empty database path"
+    )]
+    ForeignDatabase,
 }
 
 impl MemoryError {
@@ -27,6 +31,7 @@ impl MemoryError {
             Self::InvalidCursor => "INVALID_CURSOR",
             Self::Storage(_) | Self::Io(_) => "STORAGE_ERROR",
             Self::NewerSchema => "NEWER_SCHEMA",
+            Self::ForeignDatabase => "FOREIGN_DATABASE",
         }
     }
     pub fn payload(&self) -> serde_json::Value {

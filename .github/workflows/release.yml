@@ -28,18 +28,15 @@ jobs:
         run: cargo test --locked --target ${{ matrix.target }}
       - name: Build release binary
         run: cargo build --release --locked --target ${{ matrix.target }}
-      - name: Stage release files
-        shell: bash
-        env:
-          RELEASE_TARGET: ${{ matrix.target }}
-        run: |
-          mkdir -p release
-          cp target/"$RELEASE_TARGET"/release/project-memory-mcp* release/
-          cp README.md LICENSE server.json release/
-          cp -R skills examples docs release/
-          rm -f release/*.d release/*.pdb
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Release archive regression tests
+        run: python -m unittest discover -s tests -p '*_test.py'
+      - name: Package native release archive with checksum
+        run: python scripts/package-release.py --target ${{ matrix.target }} --output artifacts
       - uses: actions/upload-artifact@v4
         with:
           name: project-memory-mcp-${{ matrix.target }}
-          path: release/
+          path: artifacts/
           if-no-files-found: error

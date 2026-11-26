@@ -80,7 +80,7 @@ pub struct Note {
 #[serde(deny_unknown_fields)]
 pub struct Search {
     pub project_id: String,
-    /// Literal substring of note title/content; LIKE metacharacters are escaped.
+    /// Literal substring of note title/content, including NUL; no wildcard syntax.
     pub query: String,
     #[serde(default = "default_limit")]
     pub limit: u32,
