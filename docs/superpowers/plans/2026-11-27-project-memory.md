@@ -20,7 +20,7 @@ The user requested Rust during implementation. This supersedes the approved desi
 - Ten tools: create_project, list_projects, get_project_context, get_record, save_note, search_notes, record_decision, save_handoff, export_project, delete_project.
 - No paid APIs, telemetry, source scanning, remote synchronization, or global skill/client configuration changes.
 - Explicit project IDs, author type user/assistant, timestamps, immutable records, and source references.
-- Limits: page default 20/max 50; note content max 16000 Unicode scalar values; decision and rationale max 8000 each; total serialized record input max 131072 bytes; list fields max 20 entries/max 1000 characters each; sources max 10/max 2048 characters each. Export response max 256 KiB with cursor continuation.
+- Limits: page default 20/max 50; note content max 16000 Unicode scalar values; decision and rationale max 8000 each; total serialized record input max 65536 bytes; list fields max 20 entries/max 1000 characters each; sources max 10/max 2048 characters each. Export response max 256 KiB with cursor continuation.
 - Strict unknown-field rejection, UUID validation, parameterized queries, atomic supersession and deletion.
 - Local plaintext database defaults to the platform user data directory; Unix new directories mode 0700 and database mode 0600.
 - Source and binary preparation only; user intends to push. No remote repository or package publication in this build.

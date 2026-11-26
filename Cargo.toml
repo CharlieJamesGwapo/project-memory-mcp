@@ -10,18 +10,18 @@ repository = "https://github.com/CharlieJamesGwapo/project-memory-mcp"
 readme = "README.md"
 keywords = ["mcp", "ai", "memory", "sqlite", "skills"]
 categories = ["command-line-utilities", "database"]
-include = ["src/**", "tests/**", "skills/**", "examples/**", "docs/publishing.md", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE", "server.json"]
+include = ["src/**", "tests/**", "skills/**", "examples/**", "docs/publishing.md", "docs/skills.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "server.json"]
 
 [package.metadata.mcp]
 name = "io.github.charliejamesgwapo/project-memory"
 
 [dependencies]
 base64 = "0.22"
-chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+time = { version = "0.3", features = ["formatting", "parsing"] }
 clap = { version = "4", features = ["derive", "env"] }
 directories = "6"
-rmcp = { version = "3.11", features = ["server", "transport-io", "macros", "schemars"] }
-rusqlite = { version = "0.38", features = ["bundled"] }
+rmcp = { version = "3.12", default-features = false, features = ["server", "transport-io", "macros", "schemars"] }
+rusqlite = { version = "0.43", features = ["bundled"] }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -32,7 +32,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 
 [dev-dependencies]
 tempfile = "3"
-rmcp = { version = "3.11", features = ["client", "transport-child-process"] }
+rmcp = { version = "3.12", default-features = false, features = ["client", "transport-child-process"] }
 
 [profile.release]
 lto = "thin"

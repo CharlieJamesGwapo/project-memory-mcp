@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "project-memory": {
+      "command": "/absolute/path/to/project-memory-mcp",
+      "args": ["--db", "/absolute/path/to/private-memory/memory.sqlite"]
+    }
+  }
+}

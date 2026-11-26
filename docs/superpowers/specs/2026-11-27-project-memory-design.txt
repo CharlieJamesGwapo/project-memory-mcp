@@ -1,6 +1,9 @@
 Project Memory MCP and Skills — Proposed Design
 
-Status: Design for review; software has not been implemented or published.
+Status: Approved in chat, then amended by the user's request for Rust.
+The Rust amendment in ../plans/2026-11-27-project-memory.md supersedes this
+document's TypeScript/Node/npm details with Rust/rmcp, bundled SQLite, Cargo
+packages and native binaries. Functional requirements remain binding.
 Owner: CharlieJamesGwapo (verified through the authenticated GitHub API).
 
 Purpose

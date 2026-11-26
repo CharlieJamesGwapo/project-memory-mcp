@@ -31,7 +31,10 @@ impl MemoryError {
     }
     pub fn payload(&self) -> serde_json::Value {
         #[derive(Serialize)]
-        struct Body<'a> { code: &'a str, message: String }
+        struct Body<'a> {
+            code: &'a str,
+            message: String,
+        }
         serde_json::json!({"error": Body {code: self.code(), message: self.to_string()}})
     }
 }

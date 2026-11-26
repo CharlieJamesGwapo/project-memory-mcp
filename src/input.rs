@@ -3,7 +3,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
-fn default_limit() -> u32 { 20 }
+fn default_limit() -> u32 {
+    20
+}
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -29,7 +31,9 @@ pub struct ListProjects {
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct ProjectId { pub project_id: String }
+pub struct ProjectId {
+    pub project_id: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -46,11 +50,17 @@ pub struct Context {
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct RecordId { pub project_id: String, pub record_id: String }
+pub struct RecordId {
+    pub project_id: String,
+    pub record_id: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum Author { User, Assistant }
+pub enum Author {
+    User,
+    Assistant,
+}
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -132,26 +142,45 @@ pub fn parse<T: DeserializeOwned>(input: Value) -> Result<T> {
 }
 pub fn text(value: &str, field: &str, max: usize) -> Result<()> {
     if value.trim().is_empty() || value.chars().count() > max {
-        return Err(MemoryError::Validation(format!("{field} must contain 1–{max} characters")));
+        return Err(MemoryError::Validation(format!(
+            "{field} must contain 1–{max} characters"
+        )));
     }
     Ok(())
 }
 pub fn id(value: &str) -> Result<()> {
-    if uuid::Uuid::parse_str(value).is_err() || value.len() != 36 || value != value.to_ascii_lowercase() {
-        return Err(MemoryError::Validation("IDs must be lowercase, hyphenated UUIDs".into()));
+    if uuid::Uuid::parse_str(value).is_err()
+        || value.len() != 36
+        || value != value.to_ascii_lowercase()
+    {
+        return Err(MemoryError::Validation(
+            "IDs must be lowercase, hyphenated UUIDs".into(),
+        ));
     }
     Ok(())
 }
 pub fn page(limit: u32) -> Result<()> {
-    if !(1..=50).contains(&limit) { return Err(MemoryError::Validation("limit must be 1–50".into())); }
+    if !(1..=50).contains(&limit) {
+        return Err(MemoryError::Validation("limit must be 1–50".into()));
+    }
     Ok(())
 }
 pub fn list(values: &[String], field: &str, max_count: usize, max_length: usize) -> Result<()> {
-    if values.len() > max_count { return Err(MemoryError::Validation(format!("{field} has too many entries (max {max_count})"))); }
-    for value in values { text(value, field, max_length)?; }
+    if values.len() > max_count {
+        return Err(MemoryError::Validation(format!(
+            "{field} has too many entries (max {max_count})"
+        )));
+    }
+    for value in values {
+        text(value, field, max_length)?;
+    }
     Ok(())
 }
 pub fn record_size(value: &Value) -> Result<()> {
-    if value.to_string().len() > 65536 { return Err(MemoryError::Validation("record input exceeds 65536 UTF-8 bytes".into())); }
+    if value.to_string().len() > 65536 {
+        return Err(MemoryError::Validation(
+            "record input exceeds 65536 UTF-8 bytes".into(),
+        ));
+    }
     Ok(())
 }

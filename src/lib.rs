@@ -1,7 +1,7 @@
 //! Local, explicit project memory for MCP clients.
 pub mod error;
+mod export;
 pub mod input;
 mod pagination;
-mod export;
-pub mod store;
 pub mod server;
+pub mod store;
