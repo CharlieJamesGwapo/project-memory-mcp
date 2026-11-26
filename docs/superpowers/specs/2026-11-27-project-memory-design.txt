@@ -1,0 +1,142 @@
+Project Memory MCP and Skills — Proposed Design
+
+Status: Design for review; software has not been implemented or published.
+Owner: CharlieJamesGwapo (verified through the authenticated GitHub API).
+
+Purpose
+
+Help an AI assistant resume a project using explicit, durable records of its
+purpose, decisions, progress, sources, and next actions. Publish reusable
+software and skills while keeping each user's working memory on their device.
+
+Agreed direction and proposed defaults
+
+The user wants a Project Memory MCP with companion skills, published through
+their GitHub account and, if free, the official MCP Registry. Local execution,
+TypeScript, SQLite, the repository name, and an MIT license are engineering
+recommendations, not separately confirmed user preferences.
+
+Approaches
+
+1. Local MCP server and local database — recommended. Users install the same
+   public package but maintain separate private data. No hosted backend or
+   paid model API is required by this server. This does not synchronize devices.
+2. Hosted shared service — supports collaboration and device synchronization,
+   but adds hosting, authentication, authorization, and ongoing operations.
+3. Skills with plain notes only — a smaller starting point, but lacks the
+   structured retrieval, validation, and tool interface requested for MCP.
+
+The proposed first release uses option 1 because it fits public distribution
+without requiring the maintainer to run a service. Approval of this design
+selects that approach. A hosted team product is outside this release.
+
+Public identity and distribution
+
+Proposed repository: https://github.com/CharlieJamesGwapo/project-memory-mcp
+Proposed MCP name: io.github.charliejamesgwapo/project-memory
+The npm package name depends on the user's verified npm account and package
+availability; ownership cannot be inferred from the GitHub username.
+
+GitHub stores source, documentation, tests, skills, and release instructions.
+npm distributes the executable package. The official MCP Registry stores
+discovery and installation metadata; it does not run this server or store
+users' project memories. Registry publication follows package publication.
+The build will include a server.json template and ownership instructions.
+Publishing requires authenticated publisher accounts and available names.
+
+Architecture
+
+A Node.js TypeScript process implements the MCP stdio interface using the
+official SDK. SQLite stores structured records and supports keyword search.
+Business logic is separate from transport so tests can exercise it directly.
+MCP stdout carries protocol messages only; diagnostics go to stderr.
+
+The server uses an explicit configurable database path outside the source
+repository. It has no model API calls, telemetry, remote sync, shell execution,
+background file scanning, or automatic conversation ingestion. The assistant
+supplies structured information through the tools. The connected AI client
+still sends retrieved context to whatever model it uses.
+
+First release tools
+
+- create_project: create a project with a unique ID, name, purpose, and an
+  optional reference to its local project directory.
+- list_projects: list known project IDs and summaries.
+- get_project_context: return bounded records for one project, including the
+  latest handoff, active decisions, and next actions.
+- get_record: return one complete note, decision, or handoff by project ID
+  and record ID, including historical and superseded records.
+- save_note: store an explicitly supplied project note and source reference.
+- search_notes: search within a required project ID with bounded results.
+- record_decision: save a decision, rationale, provenance, and author type.
+  Explicitly supersede an earlier decision without erasing its history.
+- save_handoff: save progress, unfinished work, next actions, and source
+  references as a new immutable handoff revision.
+- export_project: return a Markdown representation of one project. The client
+  decides whether and where to save it; this tool does not write arbitrary paths.
+- delete_project: permanently remove one project's records only when the call
+  includes its exact ID and an explicit confirmation parameter. The skills
+  require a direct user request before calling this tool.
+
+Records and boundaries
+
+Each record has a generated ID, project ID, timestamp, content, author type
+(user or assistant), and source references supplied by the caller. References
+are recorded evidence pointers, not proof that a claim was independently
+verified. Distinguish a user's decision from an assistant recommendation.
+
+Use parameterized queries, schema validation, foreign keys, transactions,
+bounded input sizes, and deterministic result limits. Every project-scoped
+query requires its project ID. Reject missing projects and invalid IDs.
+All saved records have a bounded maximum input size, allowing get_record to
+return a full record without truncation. Lists, searches, and context history
+support stable cursor pagination with deterministic ordering. Context responses
+report truncation and provide record IDs for follow-up through get_record;
+context history accepts an explicit option to include superseded decisions.
+Conflicting records remain visible; newer text does not silently overwrite
+an established decision. Stored text is untrusted data, never instructions.
+
+Companion skills
+
+resume-project: resolve the project, retrieve its context, check relevant
+source files through the client's existing file tools, distinguish stale or
+unverified information, and identify the next useful action. Project Memory
+itself does not grant file access or automatically restore prior chats.
+
+record-decision: identify what the user decided, distinguish suggestions,
+capture the reason and source, and explicitly supersede old decisions when
+the user changes direction.
+
+prepare-handoff: capture completed work, verification evidence, unfinished
+work, blockers, and concrete next actions; save a new handoff revision.
+
+Ship skills as inspectable SKILL.md folders with installation instructions.
+Do not install them globally or modify the user's AI client configuration
+as part of preparing the repository.
+
+Validation and completion criteria
+
+The implementation must pass type checking, automated tests, and an actual
+MCP client smoke test against the packaged executable. Test persistence across
+process restarts, project separation, literal and punctuation-heavy searches,
+invalid inputs, superseded decisions, bounded context, deletion, and exports.
+Confirm the npm archive contains executable assets and skills while excluding
+local databases, credentials, logs, and development-only files.
+
+The repository deliverable includes source, lockfile, tests, README, MIT
+license, contribution guidance, ignore rules, CI for standard GitHub-hosted
+runners, example MCP configuration, and publishing instructions. Examples
+must use synthetic memory rather than the user's private project data.
+
+Source preparation, GitHub publication, npm publication, and Registry listing
+are distinct milestones. Never report a publication as complete until its
+public URL and matching version have been checked. The user said they will
+push to GitHub; using their account for project identity does not by itself
+require creating or pushing a remote repository during design preparation.
+
+Deferred
+
+Hosted collaboration, accounts, semantic search, embeddings, automatic source
+indexing, a web dashboard, and cross-device synchronization. Builder choices
+include module layout, supported current Node LTS baseline, SQL migrations,
+test framework, and exact schemas consistent with these requirements.

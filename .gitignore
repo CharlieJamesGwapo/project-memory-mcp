@@ -1,0 +1,12 @@
+target/
+coverage/
+*.crate
+*.zip
+*.sqlite*
+*.db*
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.superpowers/
