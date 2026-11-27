@@ -54,7 +54,7 @@ third-party MCPB packages.
 
 ## Current audit limits
 
-On 27 November 2026, cargo-audit0.23.0 against RustSec snapshot
+On 27 November 2026, cargo-audit 0.23.0 against RustSec snapshot
 `c9f6c91a44dbad9d71742329e9df061279f9c4be` reported zero entries classified as
 vulnerabilities in both Cargo locks. The Studio lock also reported:
 
@@ -83,8 +83,12 @@ Registry publication verifies the matching source digest and bundle attestation,
 validates exact metadata and uses GitHub OIDC. It does not store a long-lived
 Registry token. See [publishing](publishing.md) for the versioned workflow.
 
-Desktop macOS previews have an ad-hoc executable signature, no Developer ID
-signature and no notarization. Runtime testing currently covers macOS arm64;
+From v0.2.1, the desktop macOS preview has a verified ad-hoc bundle signature,
+no Developer ID signature and no notarization. The v0.2.0 Studio ZIP had only a
+linker-generated executable signature and failed strict bundle verification;
+prefer the corrected v0.2.1 download. Packaging verifies the bundle both before
+ZIP creation and after extraction. See [Tauri's signing guide](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing).
+Runtime testing currently covers macOS arm64;
 compilation/test CI on other hosts is not the same as interactive OS testing.
 
 See [SECURITY.md](../SECURITY.md) for reporting and [data safety](data-safety.md)

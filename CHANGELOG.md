@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 — macOS bundle signing
+
+- Seal the complete Studio application bundle with Tauri's explicit ad-hoc
+  signing identity. The earlier executable-only linker signature did not seal
+  the app's resources and failed macOS bundle verification.
+- Require strict signature verification before packaging and after extracting
+  the exact Studio ZIP, before release checksums and attestations are generated.
+- Preserve the published v0.2.0 release and Registry listing. Prefer v0.2.1 for
+  the macOS Studio preview. MCP tool contracts and SQLite schema are unchanged.
+
 ## 0.2.0 — toolkit upgrade
 
 - Added whole-record context bundles with bounded canonical MCP result bytes,
@@ -18,7 +28,7 @@
   provenance and advisory/source checks, and removed the vulnerable MCPB npm
   build dependency chain through standard-library bundle packing.
 
-Schema remains1. Existing tool inputs are preserved. Runtime and distribution
+Schema remains 1. Existing tool inputs are preserved. Runtime and distribution
 limits, including upstream desktop warnings, are documented in docs/security.md.
 
 ## 0.1.0 — initial release

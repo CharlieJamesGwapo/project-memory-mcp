@@ -118,10 +118,13 @@ jobs:
           source bundle.env
           mkdir -p studio-preview/licenses
           ditto "target/studio/aarch64-apple-darwin/release/bundle/macos/Project Memory Studio.app" "studio-preview/Project Memory Studio.app"
+          codesign --verify --deep --strict "studio-preview/Project Memory Studio.app"
           cp docs/studio-download-readme.md studio-preview/README.md
           cp LICENSE studio-preview/LICENSE
           cp apps/studio/public/licenses/*.txt studio-preview/licenses/
           ditto -c -k --keepParent studio-preview "dist-release/project-memory-studio-${RELEASE_VERSION}-macos-arm64.zip"
+          ditto -x -k "dist-release/project-memory-studio-${RELEASE_VERSION}-macos-arm64.zip" studio-roundtrip
+          codesign --verify --deep --strict "studio-roundtrip/studio-preview/Project Memory Studio.app"
       - name: Generate exact Registry metadata and checksums
         id: metadata
         run: |

@@ -6,7 +6,7 @@ A local Rust + SQLite MCP server, a focused developer workflow pack, and an
 optional desktop workspace. Remember why a decision was made, retrieve useful
 context within a visible budget, and continue with evidence you can inspect.
 
-**Toolkit v0.2.0:** the features below describe this source version. Download
+**Toolkit v0.2.1:** the features below describe this source version. Download
 matching builds from [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases)
 and check `--version`. The older v0.1 release has ten tools and three skills.
 

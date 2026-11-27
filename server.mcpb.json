@@ -7,12 +7,12 @@
     "url": "https://github.com/CharlieJamesGwapo/project-memory-mcp",
     "source": "github"
   },
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/download/v0.1.0/project-memory-mcp-0.1.0.mcpb",
-      "fileSha256": "68d0a222a99452937be3d3a6b44d4dd18c018997002bfe69581de107161a1cf7",
+      "identifier": "https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/download/v0.2.0/project-memory-mcp-0.2.0.mcpb",
+      "fileSha256": "7b6f3e5ca628d1b7a4049a90f038d0bfdbfb3eb51e3254b1248e50bc9b003316",
       "transport": {
         "type": "stdio"
       }

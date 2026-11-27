@@ -1,6 +1,6 @@
 [package]
 name = "project-memory-studio"
-version = "0.2.0"
+version = "0.2.1"
 description = "A local desktop workspace for Project Memory"
 edition = "2024"
 rust-version = "1.100"

@@ -66,7 +66,7 @@ codex mcp add project-memory -- /absolute/path/project-memory-mcp --db /absolute
 codex mcp list
 ```
 
-This syntax was checked against local Codex CLI0.162.1. See the current
+This syntax was checked against local Codex CLI 0.162.1. See the current
 [Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
 for configuration differences. Project Memory does not configure your client
 or grant extra filesystem, network, terminal or agent permissions.

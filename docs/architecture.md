@@ -81,7 +81,7 @@ semantic inference or automatic source indexing. A query result is a preview;
 inserts and future successor references. Deletions can still remove entries.
 
 Context bundles keep whole records. Automatic selection follows a documented
-order or literal task query and considers at most200 candidates. The result
+order or literal task query and considers at most 200 candidates. The result
 reports omissions instead of silently shortening evidence. Explicit selections
 are atomic: the full set fits, or the request fails. [API details](api-reference.md)
 explain canonical result bytes, compatibility text and estimated token counts.
