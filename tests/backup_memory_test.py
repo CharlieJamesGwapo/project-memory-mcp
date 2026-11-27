@@ -1,4 +1,5 @@
 import importlib.util
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -38,7 +39,7 @@ class BackupMemoryTest(unittest.TestCase):
         self.assertEqual(report["status"], "ready")
         self.assertEqual(report["schema_version"], 1)
         self.assertEqual(self.source.read_bytes(), before)
-        with sqlite3.connect(self.destination) as restored:
+        with closing(sqlite3.connect(self.destination)) as restored:
             self.assertEqual(restored.execute("SELECT text FROM evidence ORDER BY id").fetchall(), [("original",), ("日本語 latest committed",)])
             self.assertEqual(restored.execute("PRAGMA quick_check").fetchone()[0], "ok")
 
@@ -71,7 +72,7 @@ class BackupMemoryTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             backup(self.source, self.destination)
         self.assertEqual(self.source.read_bytes(), before)
-        with sqlite3.connect(self.source) as db:
+        with closing(sqlite3.connect(self.source)) as db:
             db.executescript("PRAGMA application_id=1347240784; PRAGMA user_version=2;")
         with self.assertRaises(ValueError):
             backup(self.source, self.destination)

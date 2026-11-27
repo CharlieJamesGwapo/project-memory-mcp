@@ -13,23 +13,24 @@ source-code access, a model subscription, or permission to run commands.
 ## Install all four folders
 
 Use an unpacked release that includes `skills/` and `scripts/`, or this repository.
-The installer requires Python 3.8+ and uses only the standard library. It is
+The supported helper setup uses Python 3.11+ and only the standard library. It is
 offline, executes no downloaded code, and changes no host configuration or
 `AGENTS.md` file. Invoke it through Python rather than relying on executable bits.
 
-Choose your client's documented skill directory. For a Codex setup using
-`~/.codex/skills`, first preview:
+Choose your client's documented skill directory. Current Codex documentation
+uses `~/.agents/skills` for user skills and `.agents/skills` for repository-local
+skills. First preview:
 
 ```sh
 python3 scripts/check-skills.py
-python3 scripts/install-skills.py --destination "~/.codex/skills"
+python3 scripts/install-skills.py --destination "~/.agents/skills"
 ```
 
 The destination is mandatory. The default operation is a dry-run: it does not
 create the directory or write files. Inspect the plan, then apply it:
 
 ```sh
-python3 scripts/install-skills.py --destination "~/.codex/skills" --apply
+python3 scripts/install-skills.py --destination "~/.agents/skills" --apply
 ```
 
 All four skill folders are installed together, including their local references
@@ -43,6 +44,9 @@ A supported project-local skill directory can limit discovery to one project;
 use that explicit destination instead. Follow the host's current documentation
 for supported paths, discovery, and refresh behavior. Other clients may use
 different mechanisms or ignore the optional `agents/openai.yaml` UI file.
+See [Codex's current skill guide](https://learn.chatgpt.com/docs/build-skills)
+for supported locations and discovery. The installer refuses symlink aliases
+even when a host itself supports them; choose the actual destination directory.
 
 ## Upgrade and recover customized skills
 
@@ -58,7 +62,7 @@ For a new release, validate its skill files and preview replacement:
 
 ```sh
 python3 scripts/check-skills.py
-python3 scripts/install-skills.py --destination "~/.codex/skills" --replace
+python3 scripts/install-skills.py --destination "~/.agents/skills" --replace
 ```
 
 Review differences against your existing customizations. You can preserve/merge
@@ -66,7 +70,7 @@ those folders yourself. To deliberately replace different folders with the
 release versions:
 
 ```sh
-python3 scripts/install-skills.py --destination "~/.codex/skills" --replace --apply
+python3 scripts/install-skills.py --destination "~/.agents/skills" --replace --apply
 ```
 
 When a folder is replaced, the installer prints a backup directory inside the
@@ -78,8 +82,8 @@ them. No backup is needed for an identical or entirely new installation.
 To undo that upgrade, substitute the exact printed backup path:
 
 ```sh
-python3 scripts/install-skills.py --destination "~/.codex/skills" --restore "<backup-path>"
-python3 scripts/install-skills.py --destination "~/.codex/skills" --restore "<backup-path>" --apply
+python3 scripts/install-skills.py --destination "~/.agents/skills" --restore "<backup-path>"
+python3 scripts/install-skills.py --destination "~/.agents/skills" --restore "<backup-path>" --apply
 ```
 
 Restore previews by default. Apply restores original replaced folders and removes
