@@ -57,6 +57,15 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertIn('secret-pattern', result.stdout)
         self.assertNotIn(secret, result.stdout + result.stderr)
 
+    def test_documentation_jpeg_assets_are_not_decoded_as_utf8_source(self):
+        for extension in ('jpg', 'jpeg'):
+            image = self.root / f'docs/images/preview.{extension}'
+            image.parent.mkdir(parents=True, exist_ok=True)
+            image.write_bytes(b'\xff\xd8\xff\xe0synthetic binary asset\xff\xd9')
+            subprocess.run(['git', '-C', str(self.root), 'add', image.relative_to(self.root)], check=True)
+        result = self.check()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_blocks_runtime_shell_and_network_expansion(self):
         for path, code in [('src/runner.rs', 'std::process::' + 'Command::new("sh");'),
                            ('apps/studio/src/upload.ts', 'f' + 'etch("https://example.invalid");')]:

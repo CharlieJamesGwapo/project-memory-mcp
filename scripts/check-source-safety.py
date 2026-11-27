@@ -30,7 +30,7 @@ ACTION = re.compile(r'^[ \t]*-?[ \t]*[\'"]?uses[\'"]?:[ \t]*([^\n]*)$', re.MULTI
 PINNED_ACTION = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40}')
 CRATES_SOURCE = 'registry+https://github.com/rust-lang/crates.io-index'
 LOCAL_CRATES = {'project-memory-mcp', 'project-memory-studio'}
-BINARY_SUFFIXES = {'.png', '.ico', '.icns', '.woff', '.woff2', '.ttf', '.otf'}
+BINARY_SUFFIXES = {'.png', '.jpg', '.jpeg', '.ico', '.icns', '.woff', '.woff2', '.ttf', '.otf'}
 
 
 def check(root):

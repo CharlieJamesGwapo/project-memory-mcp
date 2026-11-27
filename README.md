@@ -89,6 +89,10 @@ defines exactly what is counted and how compatibility text affects the budget.
 
 ## Desktop companion
 
+![Context presets and ranked task matching in the browser preview](https://raw.githubusercontent.com/CharlieJamesGwapo/project-memory-mcp/main/docs/images/studio-0.3.0-preview.jpg)
+
+Browser preview with labeled synthetic records.
+
 [Project Memory Studio](docs/studio.md) uses Tauri + React and the same Rust
 store. It opens existing archives read-only, displays full records, and composes
 a selected Markdown brief. Suggested context requires an explicit Add or Replace
@@ -132,7 +136,7 @@ These provide scoped evidence, not a guarantee of malware absence. Read the
 | [Security](docs/security.md) | Threat model, actual audit limits, upstream warnings and release integrity |
 | [Troubleshooting](docs/troubleshooting.md) | Common setup, query, budget, SQLite and desktop problems |
 | [Publishing](docs/publishing.md) | Versioned builds, standard-library MCPB packing, provenance and MCP Registry |
-| [Previous release evidence](https://github.com/CharlieJamesGwapo/project-memory-mcp/blob/main/docs/releases/0.2.1-verification.md) | v0.2.1 source, checks, public download hashes and provenance commands |
+| [Release evidence](https://github.com/CharlieJamesGwapo/project-memory-mcp/blob/main/docs/releases/0.3.0-verification.md) | v0.3.0 source, checks, public download hashes, provenance and verification limits |
 | [Contributing](CONTRIBUTING.md) | Tests, platform checks and contribution expectations |
 | [Changelog](CHANGELOG.md) | Changes and compatibility |
 
