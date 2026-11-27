@@ -47,7 +47,7 @@ jobs:
           subprocess.run(['git','diff','--exit-code',sha,'HEAD','--','src','Cargo.toml','Cargo.lock','rust-toolchain.toml','build.rs','.github/workflows/release.yml','scripts/package-release.py'],check=True)
           print('Verified successful trusted build with matching Rust code and dependencies:',sha)
           PY
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.run_id }}
@@ -156,7 +156,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: prepared-release-assets
           path: prepared
@@ -173,7 +173,7 @@ jobs:
     env:
       RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: prepared-release-assets
           path: prepared
