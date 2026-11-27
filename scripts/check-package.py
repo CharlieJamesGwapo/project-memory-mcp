@@ -30,7 +30,7 @@ def check(path):
         required = {"Cargo.toml", "Cargo.lock", "src/main.rs", "src/lib.rs", "README.md", "LICENSE", "server.json", "docs/publishing.md", "docs/skills.md"}
         required.update(f"skills/{name}/SKILL.md" for name in ("project-memory", "resume-project", "record-decision", "prepare-handoff"))
         required.update(f"skills/project-memory/references/{name}.md" for name in ("token-saver", "code-review", "agent-team", "security-audit"))
-        required.update({"AGENTS.md", "CHANGELOG.md", "docs/quickstart.md", "docs/architecture.md", "docs/api-reference.md", "docs/security.md", "docs/data-safety.md", "scripts/install-skills.py", "scripts/check-skills.py", "scripts/backup-memory.py", "scripts/verify-backup.py", "docs/access-policy.md", "docs/code-review.md", "docs/backup-verification.md"})
+        required.update({"AGENTS.md", "CHANGELOG.md", "docs/quickstart.md", "docs/architecture.md", "docs/api-reference.md", "docs/security.md", "docs/data-safety.md", "scripts/install-skills.py", "scripts/check-skills.py", "scripts/backup-memory.py", "scripts/verify-backup.py", "docs/access-policy.md", "docs/code-review.md", "docs/backup-verification.md", "docs/setup.md", "docs/memory-health.md", "docs/mcp-views.md"})
         missing = required.difference(files)
         if missing:
             raise ValueError(f"Missing assets: {sorted(missing)}")

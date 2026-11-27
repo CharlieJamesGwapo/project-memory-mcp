@@ -41,7 +41,15 @@ export function formatContext(
                 record.verification,
               ),
             ].join("\n\n");
-    return `${metadata}\n${content}\n\n${section("Sources", record.sources)}`;
+    const review =
+      record.kind === "note" && record.review
+        ? `\n\n${section("Review metadata (supplied historical evidence)", [JSON.stringify(record.review, null, 2)])}`
+        : "";
+    const comparison =
+      record.kind === "note" && record.review_snapshot
+        ? `\n\n${section("Review comparison from loaded history snapshot (historical, not repository verification)", [JSON.stringify({ ...record.review_snapshot, freshness: record.freshness ?? "unknown" }, null, 2)])}`
+        : "";
+    return `${metadata}\n${content}${review}${comparison}\n\n${section("Sources", record.sources)}`;
   });
   return `${header}\n\n${bodies.join("\n\n---\n\n")}\n`;
 }

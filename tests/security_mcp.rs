@@ -16,7 +16,7 @@ async fn default_and_scoped_wire_inventory_match_store_enforcement() {
     };
     let client = ().serve(start(None)).await.unwrap();
     let tools = client.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 14);
+    assert_eq!(tools.len(), 15);
     assert!(!tools.iter().any(|t| t.name == "delete_project"));
     assert!(
         client

@@ -11,6 +11,9 @@ import { isStaleSession } from "./adapter";
 import { createSampleAdapter } from "./sample";
 import SearchMemory from "./SearchMemory";
 import ContextSuggestions from "./ContextSuggestions";
+import EvidenceViews from "./EvidenceViews";
+import GuidedSetup from "./GuidedSetup";
+import ReviewEvidence from "./ReviewEvidence";
 import { Brand, Icon } from "./icons";
 import type { IconName } from "./icons";
 import type {
@@ -22,13 +25,22 @@ import type {
   Project,
   ProjectContext,
 } from "./types";
-type Tab = "overview" | "notes" | "decisions" | "handoffs" | "search";
+type Tab =
+  | "overview"
+  | "notes"
+  | "decisions"
+  | "handoffs"
+  | "search"
+  | "reviews"
+  | "health";
 const tabs: { key: Tab; name: string; icon: IconName }[] = [
   { key: "overview", name: "Overview", icon: "overview" },
   { key: "notes", name: "Notes", icon: "note" },
   { key: "decisions", name: "Decisions", icon: "clock" },
   { key: "handoffs", name: "Handoffs", icon: "stack" },
   { key: "search", name: "Search", icon: "search" },
+  { key: "reviews", name: "Reviews", icon: "clock" },
+  { key: "health", name: "Health", icon: "shield" },
 ];
 function shortDate(date: string | null): string {
   if (!date) return "No activity yet";
@@ -163,6 +175,7 @@ function Inspector({
   error,
   selected,
   addError,
+  opener,
   onClose,
   onRetry,
   onAdd,
@@ -173,6 +186,7 @@ function Inspector({
   error: boolean;
   selected: boolean;
   addError: string;
+  opener: HTMLElement | null;
   onClose: () => void;
   onRetry: () => void;
   onAdd: () => void;
@@ -186,13 +200,31 @@ function Inspector({
     }
     return () => {
       if (element?.open && typeof element.close === "function") element.close();
+      // Strict Mode may replay this effect while the dialog remains mounted.
+      if (element?.isConnected) return;
+      const target =
+        opener?.isConnected && !opener.matches(":disabled")
+          ? opener
+          : (document.querySelector<HTMLElement>(
+              '[role="tab"][aria-selected="true"]',
+            ) ??
+            document.querySelector<HTMLElement>(
+              ".refresh-button:not(:disabled), .welcome .primary:not(:disabled)",
+            ));
+      target?.focus();
     };
-  }, []);
+  }, [opener]);
   return (
     <dialog
       ref={dialog}
       className="record-dialog"
       aria-label="Complete memory record"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onClose();
+        }
+      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -269,9 +301,18 @@ function Inspector({
               ) : null}
             </div>
             {record.kind === "note" ? (
-              <TextSection title="Note">
-                <p className="record-text">{record.content}</p>
-              </TextSection>
+              <>
+                <TextSection title="Note">
+                  <p className="record-text">{record.content}</p>
+                </TextSection>
+                {record.review ? (
+                  <ReviewEvidence
+                    review={record.review}
+                    freshness={record.freshness}
+                    snapshot={record.review_snapshot}
+                  />
+                ) : null}
+              </>
             ) : record.kind === "decision" ? (
               <TextSection title="Why this decision">
                 <p className="record-text">{record.rationale}</p>
@@ -362,6 +403,7 @@ export default function App({
   const [exporting, setExporting] = useState(false);
   const epoch = useRef(0);
   const inspectorEpoch = useRef(0);
+  const inspectorOpener = useRef<HTMLElement | null>(null);
   const bootEpoch = useRef(0);
   const chooseEpoch = useRef(0);
   const projectListEpoch = useRef(0);
@@ -489,7 +531,7 @@ export default function App({
   const requestView = useCallback(
     async (nextCursor: string | null = null) => {
       if (!project || !connection?.session_id) return;
-      if (tab === "search") {
+      if (tab === "search" || tab === "reviews" || tab === "health") {
         setLoading(false);
         return;
       }
@@ -643,8 +685,23 @@ export default function App({
         setChoosing(false);
     }
   }
-  async function openRecord(preview: Preview) {
-    if (!project || !connection?.session_id) return;
+  async function openRecord(
+    preview: Preview,
+    complete?: MemoryRecord,
+    sourceSession?: string,
+  ) {
+    if (
+      !project ||
+      !connection?.session_id ||
+      preview.project_id !== project.id ||
+      (sourceSession !== undefined && sourceSession !== connection.session_id)
+    )
+      return;
+    if (!inspecting)
+      inspectorOpener.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
     const request = ++inspectorEpoch.current;
     const scope = epoch.current;
     setInspecting(preview);
@@ -653,11 +710,15 @@ export default function App({
     setRecordError(false);
     setSelectionError("");
     try {
-      const record = await adapter.query<MemoryRecord>(
-        connection.session_id,
-        "get_record",
-        { project_id: project.id, record_id: preview.id },
-      );
+      // Review history already contains the complete note and its snapshot evidence.
+      // Refetching get_record would discard derived revision/freshness information.
+      const record =
+        complete ??
+        (await adapter.query<MemoryRecord>(
+          connection.session_id,
+          "get_record",
+          { project_id: project.id, record_id: preview.id },
+        ));
       if (
         !mounted.current ||
         scope !== epoch.current ||
@@ -856,11 +917,12 @@ export default function App({
             <code>project-memory-mcp init</code>
             <p>
               If you downloaded the server without installing it on PATH, use
-              its full executable path followed by <code>init</code>. The archive
-              starts empty. Connect your MCP client to add projects and memory;
-              Studio opens those records read-only.
+              its full executable path followed by <code>init</code>. The
+              archive starts empty. Connect your MCP client to add projects and
+              memory; Studio opens those records read-only.
             </p>
           </details>
+          <GuidedSetup adapter={adapter} scope="welcome" />
           {message ? (
             <p
               className={`status-message ${messageError ? "error" : ""}`}
@@ -993,6 +1055,11 @@ export default function App({
             </button>
           </div>
         </div>
+        <GuidedSetup
+          key={`setup:${connection.session_id}`}
+          adapter={adapter}
+          scope={`${connection.session_id}:${project?.id ?? ""}`}
+        />
         {project ? (
           <>
             <header className="project-header">
@@ -1033,7 +1100,9 @@ export default function App({
                 >
                   <Icon name={item.icon} size={13} />
                   {item.name}
-                  {item.key !== "overview" && item.key !== "search" ? (
+                  {item.key === "notes" ||
+                  item.key === "decisions" ||
+                  item.key === "handoffs" ? (
                     <span className="tab-count">
                       {item.key === "notes"
                         ? project.note_count
@@ -1196,6 +1265,18 @@ export default function App({
                     </div>
                   </>
                 ) : null
+              ) : tab === "reviews" || tab === "health" ? (
+                <EvidenceViews
+                  key={`${connection.session_id}:${project.id}:${tab}`}
+                  mode={tab}
+                  adapter={adapter}
+                  session={connection.session_id!}
+                  project={project}
+                  onOpen={(record, complete, sourceSession) =>
+                    void openRecord(record, complete, sourceSession)
+                  }
+                  onStale={handleStale}
+                />
               ) : tab === "search" ? (
                 <SearchMemory
                   key={`${connection.session_id}:${project.id}`}
@@ -1464,6 +1545,7 @@ export default function App({
             selected.some((record) => record.id === fullRecord.id)
           }
           addError={selectionError}
+          opener={inspectorOpener.current}
           onClose={closeRecord}
           onRetry={() => void openRecord(inspecting)}
           onAdd={addRecord}

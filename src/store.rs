@@ -13,6 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod health;
 mod retrieval;
 mod reviews;
 mod studio;
@@ -344,6 +345,10 @@ impl Store {
             && (!self.read_only || !crate::security::is_write(operation))
     }
 
+    pub fn allows_project(&self, project: &str) -> bool {
+        self.policy.allows_project(project)
+    }
+
     pub fn access_policy(&self) -> Value {
         self.policy.summary(self.read_only)
     }
@@ -467,6 +472,7 @@ impl Store {
                 self.save_review(input::parse(args)?)
             }
             "get_review_history" => self.review_history(input::parse(args)?),
+            "get_memory_health" => self.memory_health(input::parse(args)?),
             "create_project" => self.create_project(input::parse(args)?),
             "list_projects" => self.list_projects(input::parse(args)?),
             "studio_list_projects" => self.studio_list_projects(input::parse(args)?),

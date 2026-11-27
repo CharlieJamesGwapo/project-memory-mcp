@@ -24,7 +24,7 @@ async fn real_client_discovers_enabled_tools_calls_them_and_reconnects() {
     let path = temp.path().join("memory with spaces.sqlite");
     let first = client(&path).await;
     let tools = first.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 15);
+    assert_eq!(tools.len(), 16);
     for name in [
         "create_project",
         "list_projects",
@@ -134,7 +134,7 @@ async fn readonly_client_exposes_only_read_tools_and_rejects_direct_mutation_cal
     command.arg("--db").arg(&path).arg("--read-only");
     let reader = ().serve(TokioChildProcess::new(command).unwrap()).await.unwrap();
     let tools = reader.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 9);
+    assert_eq!(tools.len(), 10);
     assert!(
         tools
             .iter()

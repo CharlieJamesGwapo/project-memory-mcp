@@ -1,5 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { ConnectionInfo, MemoryAdapter } from "./types";
+import type { ConnectionInfo, MemoryAdapter, SetupReport } from "./types";
 import { createSampleAdapter } from "./sample";
 type Invoke = (
   command: string,
@@ -11,6 +11,8 @@ export function createNativeAdapter(call: Invoke = invoke): MemoryAdapter {
     bootstrap: () => call("bootstrap") as Promise<ConnectionInfo>,
     chooseDatabase: () =>
       call("choose_database") as Promise<ConnectionInfo | null>,
+    setupPreview: (args) =>
+      call("preview_setup", { ...args }) as Promise<SetupReport>,
     query: <T>(
       session: string,
       operation: string,

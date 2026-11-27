@@ -1,8 +1,8 @@
 # Local access policy
 
-v0.4 adds server-enforced capability restrictions. Default writable startup exposes
-14 tools: deletion is disabled. A local policy can enable deletion, exposing 15.
-Read-only mode exposes nine tools. An operation allowlist can reduce these counts.
+v0.4 added server-enforced capability restrictions; v0.5 adds a read-only health tool. Default writable startup exposes
+15 tools: deletion is disabled. A local policy can enable deletion, exposing 16.
+Read-only mode exposes ten tools. An operation allowlist can reduce these counts.
 The MCPB manifest describes the full optional inventory; live discovery is authoritative.
 
 ## Start safely
@@ -109,3 +109,16 @@ against its local owner; retain it securely and rotate only while clients are st
 
 See [security](security.md), [review records](code-review.md),
 [backup verification](backup-verification.md) and [CLI](cli.md).
+
+## v0.5 views and preview
+
+Add `get_memory_health` to an explicit operation allowlist to use health through
+its tool, CLI or resource view. Brief resources reuse `get_context_bundle`.
+Hidden resource templates are not a substitute for enforcement: direct reads
+still pass through Store policy/audit guards. Prompts return instructions and
+perform no memory operation; they do not grant access or authorize writes.
+
+Setup preview preserves explicit policy paths and read-only flags. It does not
+open an audit log or change client settings. Studio's policy preview is for a
+separate MCP client configuration, not an applied Studio policy. See
+[setup](setup.md) and [resources/prompts](mcp-views.md).

@@ -15,6 +15,8 @@ Studio opens existing archives with a read-only SQLite connection.
    history, or open the complete latest handoff.
 4. Open a record and choose **Add to context brief**. Review or remove your
    selection, then **Copy Markdown** or **Save Markdown** using the native dialog.
+5. Use **Reviews** for complete supplied review notes, or **Health** for a bounded
+   metadata inspection. Each view loads only after your explicit action.
 
 The brief contains complete selected records with original timestamps,
 authorship, source references, decision replacements and every handoff section.
@@ -25,6 +27,60 @@ projects, changing archives or refreshing clears the current brief.
 **Sample workspace** is an explicitly labeled set of synthetic projects. The
 browser development preview uses samples; the desktop app can switch to them
 when no archive is available. Samples never represent a connected database.
+
+## Guided setup
+
+**Guided setup** is available before opening an archive and above the connected
+project workspace. Enter absolute database and server executable paths, an
+optional policy path, and the read-only choice for your client's configuration.
+Choose **Preview setup** to read diagnostics and inspect the exact stdio JSON.
+Choose **Copy configuration** to copy that JSON for an explicit client edit.
+Changing a path or the read-only choice clears the previous report and copy
+action, including when an earlier preview is still pending.
+
+The native preview inspects executable metadata without running it. It does not
+test an MCP connection, initialize an archive, or change another application's
+settings. Missing or unsupported files produce next steps. The browser sample
+only illustrates the report and JSON; it checks no real filesystem paths.
+Studio has its own local read-only session. A previewed policy and the read-only
+choice apply to the generated client configuration, not Studio's connection.
+See [setup diagnostics](setup.md) for exact checks and limits.
+
+## Reviews and health
+
+The **Reviews** tab calls `get_review_history` with a page limit of 20 and a
+16,000-byte canonical response cap. Enter an optional full lowercase hexadecimal
+current commit ID (40 or 64 characters), then choose **Load reviews**. Freshness
+only compares that supplied value with the recorded head. It does not inspect a
+repository or rerun checks. Each entry displays base/head commits and revision
+links; opening its full note shows all findings, finding statuses, recorded check
+outcomes, authorship, original timestamps and sources. **Add to context brief**
+is still explicit, and Markdown preserves the full review metadata.
+Opening a review retains the complete loaded history note, including its computed
+revision links and supplied-head comparison. The inspector and exported Markdown
+label that comparison as evidence from the loaded snapshot; later head edits do
+not reinterpret an already selected review as current verification.
+
+The **Health** tab calls `get_memory_health` with the same page limit and byte
+cap. Choose **Inspect health** to see snapshot-wide counts, suggestions and a
+complete assessment for each record on the page, including records without
+signals. “Unrevised reviews” counts the latest review revisions; it does not mean
+their heads match the optional supplied commit. Open finding counts include
+`open` and `needs_verification` statuses in those latest reviews.
+
+Use **Load more reviews** or **Load more assessments** to continue the bounded
+snapshot. Page byte counts apply to each canonical MCP response, not the combined
+list. A page with no signals does not establish a healthy entire archive.
+Source references are not opened, and multiple active decisions are a prompt
+to review their scope, not evidence of a semantic conflict or safety verdict.
+See [memory health](memory-health.md) for signal definitions and limits.
+
+Editing the supplied head clears mismatched results and pagination. Changing
+project, archive or session discards pending responses. Browsing these views and
+previewing setup never adds records to your manual brief. Arrow keys, Home and
+End move between project tabs; layouts support narrow windows and reduced motion.
+Closing the record inspector with Escape or its Close button restores keyboard
+focus to the opener, or a current workspace control if that opener was removed.
 
 ## Build locally
 

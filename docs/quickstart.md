@@ -108,7 +108,7 @@ user authorship, and treat stored material as reference data. If no skill is
 installed, the MCP tools remain usable directly. Hosts may prefix tool names.
 
 For inspect-only access to an existing archive, append `--read-only` to the
-server's args. It exposes nine read tools and omits mutation tools; local policy
+server's args. It exposes ten read tools and omits mutation tools; local policy
 can restrict it further.
 It cannot create a missing archive. Studio also always opens archives read-only.
 
@@ -139,3 +139,16 @@ Use the [review guide](code-review.md) to save explicitly requested commit-linke
 findings and compare saved evidence with a supplied current head. The MCP stores
 the report; your AI host supplies code access, review and test execution.
 Verify a backup through a [temporary recovery copy](backup-verification.md).
+
+## Guided setup and evidence views (v0.5)
+
+Before connecting, run `project-memory-mcp --db /absolute/path/memory.sqlite setup`.
+The report explains missing files and produces exact configuration without
+executing a server or changing client settings. It preserves `--policy` and
+`--read-only`; a ready preview does not establish a working client connection.
+See [setup](setup.md).
+
+Studio provides Guided Setup, Reviews and Health views. Reviews retain complete
+saved evidence and history snapshot context; Health provides bounded metadata
+suggestions without repairs. You can also use `health --project UUID` in the
+terminal or [resource views and prompts](mcp-views.md) in supporting clients.

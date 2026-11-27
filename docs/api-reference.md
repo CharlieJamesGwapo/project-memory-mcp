@@ -2,7 +2,7 @@
 
 v0.2 added two read tools while preserving the original ten contracts. v0.3 adds
 optional ranked terms to context bundles and explicit CLI workflows. v0.4 adds local policy and review records. Default writable
-mode exposes 14 tools; explicit deletion opt-in exposes 15; `--read-only` exposes nine.
+mode exposes 15 tools; explicit deletion opt-in exposes 16; `--read-only` exposes ten.
 Operation allowlists can reduce inventory further. Hosts may prefix tool names.
 Unknown fields, invalid UUIDs and out-of-range values are rejected.
 
@@ -23,6 +23,7 @@ Unknown fields, invalid UUIDs and out-of-range values are rejected.
 | `get_access_policy` | None | Effective project/operation restrictions, read-only and screening mode, audit enabled status |
 | `save_review` | `project_id`, `repository`, `base_commit`, `head_commit`, `summary`, `checks`, `findings`, `author_type` | Complete immutable review note; optional `sources`, `previous_review_id` |
 | `get_review_history` | `project_id` | Complete review note page; `limit`, `cursor`, `current_head`, `max_bytes` |
+| `get_memory_health` | `project_id` | Snapshot counts and complete assessment page; `limit`, `cursor`, `current_head`, `max_bytes` |
 
 `author_type` is `user` or `assistant`. Sources are reference strings, not fetched
 or independently verified evidence. Handoff work/verification fields are arrays
@@ -178,3 +179,20 @@ CLI adds `--policy ABSOLUTE_JSON`, environment `PROJECT_MEMORY_POLICY`, `policy`
 and `inspect-secrets --project UUID [--limit N --cursor CURSOR]`. `print-config`
 preserves the policy path. Inspection reports are sanitized; ordinary reads
 continue to return complete original data.
+
+## v0.5 setup, health and protocol views
+
+`setup [--executable ABSOLUTE_PATH] [--json]` previews local checks and exact
+client configuration. Default executable is this CLI. Exit 0 means its stated
+checks passed; exit 2 means action is required, and invalid startup arguments
+can exit 1. It does not execute a server, test a client connection or initialize
+an archive. SQLite may maintain coordination files. [Setup contract](setup.md).
+
+`health --project UUID [--current-head FULL_SHA --limit 20 --cursor CURSOR
+--max-bytes 16000]` opens an existing archive read-only and calls
+`get_memory_health`. Limits are 1..50 and 4096..65536 canonical bytes. Results
+contain reference-only signals, not raw memory text or semantic conflict verdicts.
+See [health](memory-health.md) for exact fields and snapshot coverage.
+
+[MCP views](mcp-views.md) documents both resource templates and all three prompts,
+strict arguments, policy enforcement, cache behavior and tool-based fallbacks.

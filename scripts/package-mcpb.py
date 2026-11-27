@@ -27,7 +27,7 @@ REQUIRED_ASSETS = ('README.md', 'LICENSE', 'SECURITY.md', 'docs/skills.md',
                    'scripts/backup-memory.py', 'scripts/verify-backup.py')
 OPTIONAL_ASSETS = ('CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', *(f'docs/{name}.md' for name in (
     'quickstart', 'architecture', 'api-reference', 'workflows', 'troubleshooting',
-    'data-safety', 'security', 'studio', 'cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification')))
+    'data-safety', 'security', 'studio', 'cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification', 'setup', 'memory-health', 'mcp-views')))
 MAX_MEMBER_BYTES = 128 * 1024 * 1024
 MAX_TOTAL_BYTES = 384 * 1024 * 1024
 TOOLS = [
@@ -46,6 +46,7 @@ TOOLS = [
     ('get_access_policy', 'Inspect effective local operation and project restrictions.'),
     ('save_review', 'Append a commit-linked review with findings and actual checks.'),
     ('get_review_history', 'Read complete review revisions and supplied-head freshness.'),
+    ('get_memory_health', 'Inspect bounded historical metadata and review suggestions without changing records.'),
 ]
 
 

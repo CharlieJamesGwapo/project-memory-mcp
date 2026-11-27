@@ -62,5 +62,23 @@ or superiority is claimed. [Raw responses and observations](https://github.com/C
 record the small manual-rubric scope.
 The v1 observations above remain historical results for their original packs.
 
+## v0.5 evaluation scope
+
+Version `v3` adds a raw synthetic health/permission/freshness task with supplied
+discovery, policy, resource, prompt and review excerpts. Its evaluator criteria
+remain outside `input/`. The task covers partial pages versus snapshot counts,
+review-head freshness, cursor/head scope, narrow health signals and refused-write
+boundaries. Prompt instructions are distinguished from actual retrieval or checks.
+
+One fresh worker completed the v3 health/permission/freshness task from raw
+synthetic input with criteria withheld. Parent rubric assessment met 6/6 criteria,
+including bounded coverage, nonsemantic signals, head-scoped cursors and unchanged
+authorization. This was not live memory retrieval or a baseline comparison.
+The previous pack remains available for a possible future comparison. Structural
+and official validators check package shape rather than model behavior.
+[Input, response and observed scope](https://github.com/CharlieJamesGwapo/project-memory-mcp/blob/v0.5.0/evals/project-memory/v3/observations.md)
+record this small assessment. Supplied receipts and real SDK tests do not
+establish every host UI feature or a connection to a user's client.
+
 For mechanical pack checks, run `python3 scripts/check-skills.py`. For broader
 methodology, see the [Agent Skills evaluation guide](https://agentskills.io/skill-creation/evaluating-skills).

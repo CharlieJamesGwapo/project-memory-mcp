@@ -7,6 +7,9 @@ for test planning, dependency review, safe refactoring, release readiness,
 memory hygiene and architecture review. It also expands commit-linked code
 review and security assessment. You can keep using the old skill names.
 
+v0.5 retains these four folders and twelve references. It adds guidance for
+optional health, resource and prompt views while preserving older-tool fallbacks.
+
 Connecting the MCP server and installing skills are separate steps. The server
 stores explicit records; the skills guide an assistant using that server and
 its existing host tools. Installation does not add a native agent runtime,
@@ -138,13 +141,43 @@ evidence and states the specific missing capability rather than pretending it ra
 | Dependency review | Version/platform/dependency-path assessment with actual advisory scope |
 | Safe refactor | A bounded implementation improvement with preserved contracts and checks |
 | Release readiness | Exact-source/artifact assessment with observed gates and publication limits |
-| Memory hygiene | Bounded assessment of stale, conflicting, duplicate or sensitive records |
+| Memory hygiene | Bounded evidence assessment with optional health signals and complete-record follow-up |
 | Architecture review | Source-grounded boundary assessment and practical alternatives |
 
 Budgeted context, debugging, verification, agent coordination and the three
 focused memory actions remain available. This is one entry point with twelve
 developer workflow references, not twelve new installable agent services.
 Only the route needed for the current request is loaded.
+
+## Optional health, resources and prompts
+
+Discover the host's advertised capabilities and actual input schemas before
+using v0.5 views. The server exposes 15 tools by default, 16 with deletion
+enabled, and 10 in read-only mode; policy may further restrict discovery and
+access. Installing this pack adds no tools or permissions.
+
+`get_memory_health` returns bounded per-record metadata assessments and snapshot
+counts. A supplied exact `current_head` can identify a review-head mismatch.
+Signals suggest follow-up; they do not establish semantic conflicts, truth,
+safety, absence of secrets, or current verification. Inspect relevant complete
+records and report page limits. See [memory health](memory-health.md).
+
+Hosts supporting resource templates can read
+`project-memory://projects/{project_id}/brief` and
+`project-memory://projects/{project_id}/health`. These return default bounded
+first pages through the same Store policy as their tools. Use the corresponding
+tools for custom task queries, budgets, current head and pagination. Hidden or
+denied access remains denied through resources. Older servers or hosts without
+resource support retain the permitted tool workflows.
+
+The optional prompts `resume_project`, `review_change` and `prepare_handoff`
+require an exact `project_id` and accept optional `task` text up to 2000
+characters. They return instructions without reading memory, executing checks
+or saving records. Selecting a prompt grants no action permission; a handoff
+save still depends on the actual user request or existing authorization.
+Use the matching skill directly when prompt support is unavailable. Real SDK
+tests cover modern and legacy protocol paths; they do not establish that every
+host exposes these features in its UI.
 
 ## Commit-linked reviews and policy
 

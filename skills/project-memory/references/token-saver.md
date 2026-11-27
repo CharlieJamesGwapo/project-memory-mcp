@@ -50,6 +50,24 @@ unknown inputs. More matching records can mean more bytes. On v0.4, respect
 the effective project/operation policy; a denied request does not authorize
 retrieving the archive through a different path.
 
+## Optional v0.5 views
+
+If the host advertises resources and the template, the read-only
+`project-memory://projects/{project_id}/brief` resource returns a default first
+bundle with complete selected records. Inspect its selection and budget fields;
+the resource's separate response-size bound is not the bundle's canonical
+tool-result byte count. Use `get_context_bundle` for task queries, explicit IDs
+or custom budgets. The health resource is metadata assessment, not recovery
+context. Both use the same Store policy as their tools; neither is a route
+around denied access. Without resource support, keep the discovered tool path.
+
+Hosts may expose `resume_project`, `review_change` and `prepare_handoff` prompts.
+Discover prompt support and arguments before selecting one: each requires the
+exact `project_id`, with optional `task` text up to 2000 characters. A prompt
+returns instructions only; it does not read memory, execute checks or save a
+record. Its presence does not establish retrieval or authorize a write. Use
+the selected skill workflow directly when prompt support is unavailable.
+
 ## Older-server fallback
 
 Use `get_project_context` with a small `limit`, then `get_record` for relevant

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-11-27
+
+- Add shared setup diagnostics/configuration previews without executable or client-settings changes.
+- Add Studio Reviews/Health/Guided Setup with explicit controls and complete review metadata exports.
+- Add snapshot-based memory-health tool/CLI with canonical budgets and metadata-only suggestions.
+- Add two policy-enforced resource templates and three reusable prompts with legacy tool fallbacks.
+- Verify legacy and modern protocol lifecycles and private cache behavior.
+- Expand setup, health, architecture, API, security and workflow guides.
+
 ## 0.4.0 — 2026-11-27
 
 - Enforce per-connection project/operation policy and disable deletion by default.

@@ -52,3 +52,8 @@ does not authorize changing policy or using another path to the archive. Local
 policy is an access boundary for that server connection, not proof of a record's
 truth or the user's consent. Older hosts may lack this inspection tool: use the
 available permitted tools and report relevant capability limits.
+
+On v0.5+, optional health, resource and prompt views support these same routes.
+Discover the host's capabilities and actual schemas; availability varies by
+server, connection policy and client. They grant no new tools or permissions.
+Use the selected route's guidance and retain permitted older-tool fallbacks.

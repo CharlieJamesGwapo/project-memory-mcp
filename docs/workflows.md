@@ -16,6 +16,12 @@ uses targeted full-record reads if important evidence does not fit. A returned
 record retains its authorship, timestamp and sources. Recorded checks remain
 historical until the client actually reruns them.
 
+If advertised by the host, the `resume_project` prompt can supply these workflow
+instructions using the resolved `project_id` and optional `task`. It reads no
+memory itself. A discovered `/brief` resource is a default bounded first bundle;
+use `get_context_bundle` for a task query or custom limits. Discover actual
+capabilities and schemas; permitted tool fallbacks remain usable on older hosts.
+
 Budgeting reduces the amount of saved memory returned by a retrieval request.
 It does not establish a cap on every message, code file, tool response or model
 token used during the whole task. [API measurement details](api-reference.md)
@@ -121,6 +127,27 @@ checksums, provenance and relevant platform checks. Source tests, successful CI
 and interactive OS verification remain separate evidence. Publication occurs
 only within the user's actual authorization and is followed by remote readback.
 
+On v0.5, discover `get_memory_health` when available. Its summary counts cover
+the insertion snapshot while `items` cover a bounded page, including records
+without signals. Supply a known exact `current_head` for review-head comparison.
+Continue a cursor with the same project and head; a changed head starts a new
+report. Retrieve complete candidate records before judging their content. The
+optional `project-memory://projects/{project_id}/health` resource supplies only
+the default first page without a supplied head; use the tool for pagination or
+custom inputs. Resources enforce the same Store policy as tools.
+
+Health identifies narrow metadata conditions, not semantic conflicts, truth,
+safety, absence of secrets or current check results. Multiple active decisions
+suggest reviewing applicability; they can be compatible. Neither a clean page
+nor a fully paginated report establishes those broader claims. These views
+never repair records or authorize saving. When absent, use permitted existing
+read tools and report the manual assessment's actual scope.
+
+The optional `review_change` and `prepare_handoff` prompts also return only
+instructions. Each requires `project_id` and accepts optional `task` up to 2000
+characters. Selecting one does not retrieve evidence or grant write permission.
+Use the corresponding skill workflow directly when prompts are unavailable.
+
 ## Debug and verify with current evidence
 
 > Use project-memory to investigate this failing check, make the authorized
@@ -140,6 +167,13 @@ Run `project-memory-mcp init` explicitly to prepare an empty local archive.
 The [read-only CLI](cli.md) can list UUIDs, search, read complete records and
 compose Markdown/JSON context without starting a model. Existing memory still
 comes from explicit MCP saves; initialization adds no example projects.
+
+The [setup preview](setup.md) helps prepare explicit paths and stdio JSON without
+initializing an archive, appending audit entries or writing client settings. It
+does not execute the server or test a client connection. SQLite inspection can
+still maintain WAL/SHM coordination files; read-only describes memory and schema.
+Installing skills is a separate step. Protocol tests cover real modern/legacy
+SDK paths, not every host's resource or prompt UI.
 
 ## Inspect and compose visually
 

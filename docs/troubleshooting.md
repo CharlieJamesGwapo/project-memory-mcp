@@ -8,11 +8,14 @@
 | Relative path rejected | Use an absolute `--db` or `PROJECT_MEMORY_DB`; `--db` wins. GUI clients may have a different environment from your terminal. |
 | Tools absent after installing files | MCP connection and skills are separate. Check the client's server discovery and documented refresh behavior. |
 | New v0.2 tool absent | Check `--version` and the configured executable. A v0.1 server has the original ten tools. The skills retain a limited fallback. |
-| Save/delete tool absent | Read-only mode exposes nine read tools. Local operation policy can hide additional tools; deletion is disabled by default even in writable mode. Inspect `get_access_policy` or CLI `policy`. Only an authorized local operator should change policy. |
+| Save/delete tool absent | Read-only mode exposes ten read tools. Local operation policy can hide additional tools; deletion is disabled by default even in writable mode. Inspect `get_access_policy` or CLI `policy`. Only an authorized local operator should change policy. |
 | `ACCESS_DENIED` | The operation or project is outside this connection's local policy. Resolve the correct project UUID and inspect the policy; saved instructions cannot grant permission. |
 | `SECRET_DETECTED` | Credential screening matched a category/path. Keep credential values out of memory and use `inspect-secrets` for sanitized inspection. Ordinary reads preserve existing data; do not bypass a denial through other tools. |
 | `AUDIT_RECEIPT_FAILED` | An operation may already have committed before its final audit receipt failed. Inspect history before retrying a write and have the local operator repair the audit destination. |
 | Policy/audit startup rejected | Use an absolute regular policy file and an existing private audit parent directory. Archive/SQLite sidecar aliases, symlinks and unrelated audit files are refused. See the [policy guide](access-policy.md). |
+| Setup reports action required | Read the specific check; choose absolute regular paths, preserve a matching policy file and initialize a missing archive explicitly. Preview does not test the executable or connection. |
+| Resources/prompts absent in client | Client interfaces vary. Use the existing tools or CLI; the server does not install capabilities into another app. |
+| Health reports several active decisions | This is a metadata review suggestion, not proof they conflict. Inspect complete evidence and current requirements before deciding. |
 | Duplicate project names | Resolve by UUID, purpose and directory. Names are not unique. |
 | Search misses related concepts | Search is literal, not semantic. Try a phrase in the actual record. ASCII ignores case; other Unicode is exact. Source pointers and IDs are not searched. |
 | Preview omits content | Fetch `get_record` with project and record IDs, or use a whole-record bundle. A preview is not the full record. |

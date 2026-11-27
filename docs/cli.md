@@ -87,3 +87,16 @@ configuration before opening an archive. `print-config` retains that path.
 credential-category report; follow its cursor until null. `context` output is
 screened by default; ordinary `record`/`search` outputs remain complete.
 See [policy](access-policy.md) for configuration, audit outcomes and limitations.
+
+## Guided setup and memory health (v0.5)
+
+`setup [--executable ABSOLUTE_PATH] [--json]` checks local setup and previews
+configuration without starting MCP. It exits 0 for its local ready state or 2
+when action is needed. No archive or audit log is initialized, and no client
+configuration is written. Executable metadata is inspected without running it.
+SQLite coordination files may be maintained during existing-archive inspection.
+
+`health --project UUID [--current-head FULL_SHA --limit 20 --cursor CURSOR
+--max-bytes 16000]` prints complete bounded assessments and snapshot counts.
+It requires an existing archive and permission for `get_memory_health`.
+[Setup](setup.md) and [health](memory-health.md) describe exact boundaries.

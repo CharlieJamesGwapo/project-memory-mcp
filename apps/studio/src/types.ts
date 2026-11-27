@@ -52,6 +52,76 @@ export interface Note extends RecordBase {
   kind: "note";
   title: string;
   content: string;
+  review?: ReviewMetadata;
+  freshness?: "unknown" | "current" | "stale";
+  // Local evidence attached to a complete history result, never persisted.
+  review_snapshot?: { current_head: string | null; notice: string };
+}
+export interface ReviewMetadata {
+  format: "project-memory-review-v1";
+  repository: string;
+  base_commit: string;
+  head_commit: string;
+  summary: string;
+  checks: {
+    name: string;
+    outcome: "passed" | "failed" | "not_run";
+    result: string;
+  }[];
+  findings: {
+    id: string;
+    severity: string;
+    title: string;
+    path: string;
+    line: number;
+    evidence: string;
+    correction: string;
+    status: "open" | "fixed" | "accepted" | "needs_verification";
+  }[];
+  previous_review_id: string | null;
+  revised_by?: string | null;
+}
+export interface ReviewPage extends Page<Note> {
+  budget: { max_bytes: number; used_bytes: number };
+  notice: string;
+}
+export interface HealthSignal {
+  code: string;
+  message: string;
+}
+export interface MemoryHealth
+  extends Page<{ record_id: string; kind: Kind; signals: HealthSignal[] }> {
+  project_id: string;
+  summary: {
+    record_count: number;
+    active_decision_count: number;
+    review_count: number;
+    current_review_count: number;
+    open_finding_count: number;
+    missing_source_count: number;
+    latest_handoff_id: string | null;
+    suggestions: HealthSignal[];
+  };
+  records_examined: number;
+  budget: { max_bytes: number; used_bytes: number };
+  notice: string;
+}
+export interface SetupInput {
+  database: string;
+  executable: string;
+  policy_path?: string;
+  read_only: boolean;
+}
+export interface SetupReport {
+  status: "ready" | "action_required";
+  checks: {
+    code: string;
+    status: "passed" | "action_required";
+    message: string;
+  }[];
+  configuration: Record<string, unknown> | null;
+  next_actions: string[];
+  notice: string;
 }
 export interface Decision extends RecordBase {
   kind: "decision";
@@ -80,6 +150,7 @@ export interface MemoryAdapter {
   sample: boolean;
   bootstrap(): Promise<ConnectionInfo>;
   chooseDatabase(): Promise<ConnectionInfo | null>;
+  setupPreview(args: SetupInput): Promise<SetupReport>;
   query<T>(
     session: string,
     operation: string,

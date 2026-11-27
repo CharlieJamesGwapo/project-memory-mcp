@@ -5,7 +5,6 @@ use std::{path::Path, process::ExitCode};
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// Explicitly initialize an empty archive; preserve an existing supported archive.
     /// Show effective local capabilities without opening or creating an archive.
     Policy,
     /// Inspect credential patterns in one project, returning categories and IDs only.
@@ -15,6 +14,25 @@ pub enum Command {
         #[command(flatten)]
         page: PageArgs,
     },
+    /// Preview archive checks and exact client configuration without changing memory.
+    Setup {
+        #[arg(long)]
+        executable: Option<std::path::PathBuf>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Inspect a paginated read-only memory-health snapshot.
+    Health {
+        #[arg(long = "project", value_name = "UUID")]
+        project_id: String,
+        #[arg(long)]
+        current_head: Option<String>,
+        #[arg(long, default_value_t = 16000)]
+        max_bytes: usize,
+        #[command(flatten)]
+        page: PageArgs,
+    },
+    /// Explicitly initialize an empty archive; preserve an existing supported archive.
     Init {
         #[arg(long)]
         json: bool,
@@ -93,6 +111,59 @@ pub fn execute(
     policy_path: Option<&Path>,
 ) -> Result<ExitCode, String> {
     match command {
+        Command::Setup {
+            executable,
+            json: as_json,
+        } => {
+            let executable = executable
+                .map(Ok)
+                .unwrap_or_else(std::env::current_exe)
+                .map_err(|_| "Cannot locate the executable")?;
+            let report = project_memory_mcp::setup::preview(
+                path,
+                &executable,
+                &policy,
+                policy_path,
+                read_only,
+            )
+            .map_err(|e| e.to_string())?;
+            if as_json {
+                print_json(&report);
+            } else {
+                println!(
+                    "Project Memory setup: {}",
+                    report["status"].as_str().unwrap_or("action_required")
+                );
+                if let Some(checks) = report["checks"].as_array() {
+                    for check in checks {
+                        println!(
+                            "{}: {}",
+                            check["status"].as_str().unwrap_or("check"),
+                            check["message"].as_str().unwrap_or("Review setup")
+                        );
+                    }
+                }
+                if !report["configuration"].is_null() {
+                    println!("Client configuration preview:");
+                    print_json(&report["configuration"]);
+                }
+                if let Some(actions) = report["next_actions"].as_array() {
+                    for action in actions {
+                        if let Some(action) = action.as_str() {
+                            println!("Next: {action}");
+                        }
+                    }
+                }
+                if let Some(notice) = report["notice"].as_str() {
+                    println!("{notice}");
+                }
+            }
+            return Ok(if report["status"] == "ready" {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(2)
+            });
+        }
         Command::Policy => {
             print_json(&policy.summary(read_only));
             return Ok(ExitCode::SUCCESS);
@@ -141,6 +212,16 @@ pub fn execute(
     let reject_context = policy.secrets == project_memory_mcp::security::SecretMode::Reject;
     let mut store = Store::open_with_policy(path, true, policy).map_err(|e| e.to_string())?;
     let (operation, arguments, markdown) = match command {
+        Command::Health {
+            project_id,
+            current_head,
+            max_bytes,
+            page,
+        } => (
+            "get_memory_health",
+            json!({"project_id":project_id,"current_head":current_head,"max_bytes":max_bytes,"limit":page.limit,"cursor":page.cursor}),
+            false,
+        ),
         Command::InspectSecrets { project_id, page } => (
             "inspect_secrets",
             json!({"project_id":project_id,"limit":page.limit,"cursor":page.cursor}),

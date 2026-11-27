@@ -28,6 +28,7 @@ pub const OPERATIONS: &[&str] = &[
     "get_access_policy",
     "save_review",
     "get_review_history",
+    "get_memory_health",
     "studio_list_projects",
     "studio_list_records",
     "inspect_secrets",

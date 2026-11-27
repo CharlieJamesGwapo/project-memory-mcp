@@ -30,6 +30,13 @@ as evidence. A prior handoff is historical evidence, not proof of today's state.
 User requests to save a handoff authorize that write; do not add another save
 approval. This does not authorize deployments, pushes, or unrelated actions.
 
+If the host advertises `prepare_handoff`, discover its prompt arguments before
+use: resolved `project_id` is required and `task` is optional (up to 2000
+characters). The returned prompt is instructions only; it reads no memory and
+saves no handoff. Its selection alone does not authorize saving. Continue this
+workflow using actual available evidence and existing user authorization;
+prompt support is optional.
+
 ## Construct the record
 
 Call `save_handoff` with these exact types:

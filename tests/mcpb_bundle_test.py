@@ -74,7 +74,7 @@ class McpbBundleTest(unittest.TestCase):
         self.assertEqual({tool['name'] for tool in manifest['tools']}, {
             'create_project', 'list_projects', 'get_project_context', 'get_record',
             'save_note', 'search_notes', 'record_decision', 'save_handoff',
-            'export_project', 'delete_project', 'search_memory', 'get_context_bundle', 'get_access_policy', 'save_review', 'get_review_history'})
+            'export_project', 'delete_project', 'search_memory', 'get_context_bundle', 'get_access_policy', 'save_review', 'get_review_history', 'get_memory_health'})
         for name in ['project-memory', 'resume-project', 'record-decision', 'prepare-handoff']:
             self.assertTrue((destination / 'skills' / name / 'SKILL.md').is_file())
         self.assertTrue((destination / 'skills/project-memory/references/security.md').is_file())
@@ -85,10 +85,10 @@ class McpbBundleTest(unittest.TestCase):
         self.assertTrue((destination / 'docs/security.md').is_file())
 
     def test_stages_new_cli_and_evaluation_guides_when_present(self):
-        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification'):
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification', 'setup', 'memory-health', 'mcp-views'):
             self.write(f'docs/{guide}.md', f'# Synthetic {guide} guide')
         destination = self.stage()
-        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification'):
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification', 'setup', 'memory-health', 'mcp-views'):
             self.assertEqual((destination / f'docs/{guide}.md').read_text(),
                              f'# Synthetic {guide} guide')
 

@@ -8,6 +8,7 @@ import type {
   ProjectContext,
 } from "./types";
 import { formatContext } from "./context";
+import { sampleHealth, sampleReviews, sampleSetup } from "./sampleGuided";
 import {
   matchesHumanText,
   sampleContextBundle,
@@ -164,6 +165,55 @@ const records: MemoryRecord[] = [
     sources: ["research/garden-workshop.md"],
   },
 ];
+// Additional synthetic review notes preserve ordinary notebook ordering.
+for (const [n, head, previous] of [
+  [13, "b", null],
+  [14, "a", rid(13)],
+] as const) {
+  records.push({
+    ...common(n, "26"),
+    kind: "note",
+    title: `Code review: ${n === 14 ? "Pagination follow-up" : "Archive pagination"}`,
+    content:
+      n === 14
+        ? "The follow-up preserves scoped cursors. Keyboard verification remains pending."
+        : "The original pagination review found a cursor scope issue.",
+    sources: ["src/archive.ts", "tests/pagination.test.ts"],
+    review: {
+      format: "project-memory-review-v1",
+      repository: "fieldwork-atlas",
+      base_commit: "c".repeat(40),
+      head_commit: head.repeat(40),
+      summary: n === 14 ? "Pagination follow-up" : "Archive pagination",
+      previous_review_id: previous,
+      checks: [
+        {
+          name: "Pagination regression suite",
+          outcome: "passed",
+          result: "Recorded on 26 Nov: scoped cursor tests passed.",
+        },
+        {
+          name: "Keyboard walkthrough",
+          outcome: "not_run",
+          result: "A manual keyboard walkthrough is still needed.",
+        },
+      ],
+      findings: [
+        {
+          id: "cursor-scope",
+          severity: "medium",
+          title: "Keep cursors attached to their project",
+          path: "src/archive.ts",
+          line: 42,
+          evidence: "The original cursor omitted the project identifier.",
+          correction:
+            "Include project identity in cursor validation and verify keyboard pagination.",
+          status: n === 14 ? "needs_verification" : "open",
+        },
+      ],
+    },
+  });
+}
 const projectSeeds = [
   {
     name: "Fieldwork Atlas",
@@ -261,6 +311,7 @@ export function createSampleAdapter(): MemoryAdapter {
     sample: true,
     bootstrap: async () => connection,
     chooseDatabase: async () => null,
+    setupPreview: async (args) => sampleSetup(args),
     async query<T>(
       sessionId: string,
       operation: string,
@@ -273,6 +324,10 @@ export function createSampleAdapter(): MemoryAdapter {
       const project = projects.find((p) => p.id === args.project_id);
       if (!project) throw new Error("Project not found.");
       const scoped = records.filter((r) => r.project_id === project.id);
+      if (operation === "get_review_history")
+        return sampleReviews(project, scoped, args) as T;
+      if (operation === "get_memory_health")
+        return sampleHealth(project, scoped, args) as T;
       if (operation === "get_record") {
         const record = scoped.find((r) => r.id === args.record_id);
         if (!record) throw new Error("Record not found.");

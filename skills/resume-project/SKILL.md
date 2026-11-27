@@ -27,6 +27,13 @@ Resuming does not authorize creating a replacement project.
 
 ## Recover enough evidence
 
+If advertised by the host, the optional `resume_project` prompt accepts the
+resolved `project_id` and optional `task` (up to 2000 characters). Discover its
+arguments first. It provides workflow instructions, not retrieved memory or
+current verification; continue the actual reads below. Without prompts, use
+this workflow directly. Optional resource views are described in the token
+saver reference; discover them before use and respect the same access policy.
+
 When available, `get_context_bundle` can retrieve relevant whole records under
 an exact serialized-result byte cap; `search_memory` can locate literal matches
 across record kinds. For budgeted recovery, read the bundled

@@ -6,8 +6,11 @@ Project Memory has three product layers sharing one local record model:
 flowchart LR
   User[You] --> Host[AI client and its permissions]
   Skills[Skills: one entry, selected workflows] --> Host
-  Host <-->|MCP over stdio| Server[Rust MCP server]
-  Server --> Store[Validated Store transactions]
+  Host <-->|Tools, resources and prompts over stdio| Server[Rust MCP server]
+  Server --> Policy[Local operation and project policy]
+  Policy --> Store[Validated Store transactions]
+  Setup[Setup preview] -->|Read-only diagnostics| Store
+  Setup --> Config[Client JSON preview]
   Store <-->|SQLite schema 1| DB[(Local memory archive)]
   Studio[Tauri and React Studio] -->|Restricted native IPC| Read[Read-only Store session]
   Read --> DB
@@ -145,3 +148,26 @@ metadata. Skills load focused review/security/refactoring/testing routes as need
 
 Policy is per Store/connection, not archive authentication. Studio opens an independent
 local read-only connection. See [policy boundaries](access-policy.md).
+
+## v0.5 guided evidence views
+
+`src/setup.rs` inspects explicit paths, reads supported archives with scoped
+read-only diagnostics and produces client JSON without executing a binary.
+Audit handling is removed only from the inspection clone; the original policy
+is preserved in the configuration/report. Setup does not mutate memory/schema,
+create an audit log or write client settings; SQLite coordination rules still apply.
+
+`src/health.rs` defines strict inputs; `src/store/health.rs` computes summary
+counts and complete per-record assessments in one insertion-scoped transaction.
+Signals describe stored metadata rather than semantic truth. Canonical tool
+accounting and cursor advancement apply even to rows without signals.
+
+`src/server/primitives.rs` adapts allowed Store operations to bounded local
+resource templates and returns explicitly selected prompt instructions. Resource
+reads reuse operation/project/audit guards. Modern cacheable results use private
+TTL-zero hints; legacy protocol shape remains compatible.
+
+Studio adds typed setup/review/health views with explicit actions, snapshot
+labels and stale request guards. Its native setup command reads explicit paths
+without changing the selected archive session; policy preview is not applied to
+Studio's own read-only connection. See [MCP views](mcp-views.md).

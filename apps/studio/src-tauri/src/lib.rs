@@ -35,6 +35,43 @@ async fn with_session<T: Send + 'static>(
 }
 
 #[tauri::command(rename_all = "snake_case")]
+async fn preview_setup(
+    database: String,
+    executable: String,
+    policy_path: Option<String>,
+    read_only: bool,
+) -> Result<Value> {
+    if [&database, &executable]
+        .into_iter()
+        .chain(policy_path.iter())
+        .any(|p| p.len() > 4096)
+    {
+        return Err(StudioError::new(
+            "VALIDATION_ERROR",
+            "Setup paths must be at most 4096 bytes",
+        ));
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let path = policy_path.map(PathBuf::from);
+        let policy = path
+            .as_deref()
+            .map(project_memory_mcp::security::AccessPolicy::load)
+            .transpose()?
+            .unwrap_or_default();
+        project_memory_mcp::setup::preview(
+            std::path::Path::new(&database),
+            std::path::Path::new(&executable),
+            &policy,
+            path.as_deref(),
+            read_only,
+        )
+    })
+    .await
+    .map_err(|_| StudioError::new("SETUP_ERROR", "Setup preview could not finish"))?
+    .map_err(Into::into)
+}
+
+#[tauri::command(rename_all = "snake_case")]
 async fn bootstrap(session: State<'_, Session>) -> Result<ConnectionInfo> {
     with_session(session.inner().clone(), |s| Ok(s.bootstrap())).await
 }
@@ -175,6 +212,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(Arc::new(Mutex::new(StudioSession::new(default))))
         .invoke_handler(tauri::generate_handler![
+            preview_setup,
             bootstrap,
             choose_database,
             memory_query,
@@ -183,4 +221,42 @@ pub fn run() {
         ])
         .run(app_context())
         .expect("Could not start Project Memory Studio");
+}
+
+#[cfg(test)]
+mod setup_command_tests {
+    use super::*;
+    #[tokio::test]
+    async fn native_setup_preview_does_not_create_archive_audit_or_configuration() {
+        let temp = tempfile::tempdir().unwrap();
+        let archive = temp.path().join("missing/archive.sqlite");
+        let audit = temp.path().join("audit.jsonl");
+        let policy = temp.path().join("policy.json");
+        std::fs::write(
+            &policy,
+            serde_json::json!({"audit_path":audit,"operations":["list_projects"]}).to_string(),
+        )
+        .unwrap();
+        let report = preview_setup(
+            archive.to_string_lossy().into(),
+            std::env::current_exe().unwrap().to_string_lossy().into(),
+            Some(policy.to_string_lossy().into()),
+            true,
+        )
+        .await
+        .unwrap();
+        assert_eq!(report["status"], "action_required");
+        assert!(!report["configuration"].is_null());
+        assert!(!archive.parent().unwrap().exists());
+        assert!(!audit.exists());
+        assert_eq!(std::fs::read_dir(temp.path()).unwrap().count(), 1);
+    }
+    #[tokio::test]
+    async fn native_setup_rejects_oversized_arguments_before_filesystem_inspection() {
+        let error = preview_setup("x".repeat(4097), "x".into(), None, true)
+            .await
+            .unwrap_err();
+        assert_eq!(error.code, "VALIDATION_ERROR");
+        assert!(!error.message.contains(&"x".repeat(40)));
+    }
 }

@@ -16,6 +16,64 @@ fn database(path: &Path, name: &str) -> String {
 }
 
 #[test]
+fn bridge_reads_review_history_health_and_policy_without_allowing_writes() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("reviews.sqlite");
+    let project = database(&path, "Evidence views");
+    let mut writer = Store::open(&path).unwrap();
+    let mut args = json!({"project_id":project,"repository":"synthetic","base_commit":"a".repeat(40),"head_commit":"b".repeat(40),"summary":"Original review","checks":[],"findings":[],"author_type":"user","sources":["fixture.rs:12"]});
+    let original = writer.execute("save_review", args.clone()).unwrap();
+    args["summary"] = json!("Revised review");
+    args["previous_review_id"] = original["id"].clone();
+    let revised = writer.execute("save_review", args).unwrap();
+    drop(writer);
+    let before = std::fs::read(&path).unwrap();
+    let mut session = StudioSession::new(None);
+    let id = session.open_database(&path).unwrap().session_id.unwrap();
+    let history = session
+        .query(
+            &id,
+            "get_review_history",
+            json!({"project_id":project,"current_head":"c".repeat(40)}),
+        )
+        .unwrap();
+    assert_eq!(history["items"][1]["review"]["revised_by"], revised["id"]);
+    assert_eq!(history["items"][0]["freshness"], "stale");
+    let health = session
+        .query(
+            &id,
+            "get_memory_health",
+            json!({"project_id":project,"max_bytes":4096}),
+        )
+        .unwrap();
+    assert_eq!(health["summary"]["record_count"], 2);
+    assert_eq!(health["summary"]["current_review_count"], 1);
+    let policy = session.query(&id, "get_access_policy", json!({})).unwrap();
+    assert_eq!(policy["read_only"], true);
+    assert_eq!(policy["allow_delete"], false);
+    assert_eq!(
+        session
+            .query(&id, "save_review", json!({}))
+            .unwrap_err()
+            .code,
+        "OPERATION_NOT_ALLOWED"
+    );
+    assert_eq!(
+        session
+            .query(
+                "old-session",
+                "get_memory_health",
+                json!({"project_id":project})
+            )
+            .unwrap_err()
+            .code,
+        "STALE_SESSION"
+    );
+    drop(session);
+    assert_eq!(std::fs::read(path).unwrap(), before);
+}
+
+#[test]
 fn bootstrap_missing_database_does_not_create_anything() {
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("missing/db.sqlite");

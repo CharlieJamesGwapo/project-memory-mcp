@@ -85,7 +85,7 @@ def smoke(binary):
         try:
             client.initialize()
             default_tools=client.request("tools/list", {})["tools"]
-            assert len(default_tools)==14 and not any(t['name']=='delete_project' for t in default_tools)
+            assert len(default_tools)==15 and not any(t['name']=='delete_project' for t in default_tools)
             assert client.tool("get_access_policy", {})["allow_delete"] is False
         finally:
             client.close()
@@ -95,7 +95,7 @@ def smoke(binary):
         try:
             client.initialize()
             tools = client.request("tools/list", {})["tools"]
-            assert len(tools) == 15
+            assert len(tools) == 16
             a = client.tool("create_project", {"name": "Atlas", "purpose": "Synthetic MCP test"})["id"]
             b = client.tool("create_project", {"name": "Atlas", "purpose": "Separate synthetic project"})["id"]
             assert len(client.tool("list_projects", {})["items"]) == 2
@@ -121,6 +121,15 @@ def smoke(binary):
             history=client.tool("get_review_history", {"project_id":a,"current_head":"3"*40})
             assert history["items"][0]["id"]==review["id"] and history["items"][0]["freshness"]=="stale"
             assert history["budget"]["used_bytes"]<=16000
+            health=client.tool("get_memory_health", {"project_id":a,"current_head":"3"*40,"max_bytes":4096})
+            assert health["summary"]["review_count"]==1 and health["budget"]["used_bytes"]<=4096
+            assert any(any(signal["code"]=="review_head_changed" for signal in item["signals"]) for item in health["items"])
+            assert len(client.request("resources/templates/list", {})["resourceTemplates"])==2
+            resource=client.request("resources/read", {"uri":f"project-memory://projects/{a}/brief"})
+            assert json.loads(resource["contents"][0]["text"])["project"]["id"]==a
+            assert len(client.request("prompts/list", {})["prompts"])==3
+            prompt=client.request("prompts/get", {"name":"resume_project","arguments":{"project_id":a}})
+            assert "untrusted" in prompt["messages"][0]["content"]["text"]
             export = client.tool("export_project", {"project_id": a})
             assert "superseded_by" in export["markdown"]
             assert len(export["record_ids"]) == 5
@@ -136,7 +145,7 @@ def smoke(binary):
             assert len(projects) == 1 and projects[0]["id"] == b
         finally:
             client.close()
-    print("Black-box MCP smoke passed: 14 default/15 deletion-enabled tools, local policy, credential rejection, commit-linked review history, unified literal search, budgeted full records, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
+    print("Black-box MCP smoke passed: 15 default/16 deletion-enabled tools, local policy, credential rejection, commit-linked review history, memory health, resources/prompts, unified literal search, budgeted full records, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ Project Memory is a local, single-user stdio server. An AI client with the binar
 and archive path has access to that archive. Default writable mode can append to every
 project in it; local policy can restrict projects and operations. Deletion is
 disabled until local opt-in. UUIDs prevent accidental mixing, not access by another user.
-Read-only mode exposes nine read tools and SQLite rejects memory mutations.
+Read-only mode exposes ten read tools and SQLite rejects memory mutations.
 
 ## Boundaries
 
@@ -110,3 +110,17 @@ commit freshness remain untrusted historical data. Adversarial fixtures test
 denials and stale approval handling; instructions cannot guarantee injection resistance.
 
 See [review evidence](code-review.md) and [backup recovery checks](backup-verification.md).
+
+## v0.5 resources and guided setup
+
+Direct resource reads enforce the same Store policy as tools, including guessed
+hidden URIs. Cacheable project responses are private with TTL zero under modern
+protocol metadata; no public cross-user resource cache is requested. Prompts
+provide instructions without reading memory or granting authority. Setup previews
+never execute the supplied server or write client settings/audit logs. Normal
+SQLite coordination can still occur during read-only archive inspection.
+
+Health returns IDs, counts and fixed metadata suggestions without saved text or
+credential values. It does not certify correctness, security or semantic
+consistency. See [health](memory-health.md), [setup](setup.md) and
+[resource boundaries](mcp-views.md).

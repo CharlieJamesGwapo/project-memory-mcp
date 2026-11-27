@@ -14,6 +14,15 @@ current head. A stale review is historical evidence, not proof that a finding
 is fixed or that the current change passes. A matching hash still does not
 certify the supplied checks were genuine or sufficient.
 
+When advertised, `review_change` is an optional workflow prompt requiring the
+resolved `project_id` and optional `task` (up to 2000 characters). Discover its
+arguments; generating it does not retrieve a review, inspect a diff, run checks
+or authorize a save. A permitted `get_memory_health` report may point to review
+follow-up or a supplied-head mismatch, but does not replace complete review
+history or current source evidence. The default health resource has no supplied
+head comparison. If these views are absent, retain the permitted review/read
+tool workflow; a hidden capability is not proof of an older server.
+
 Recover Project Memory only when it supplies a decision relevant to the change.
 Saved source references and prior check results are pointers, not current proof.
 Read surrounding implementation and callers needed to understand the changed

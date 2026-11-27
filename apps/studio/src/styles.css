@@ -1650,3 +1650,221 @@ select:focus-visible {
 .welcome-setup code {
   overflow-wrap: anywhere;
 }
+
+/* Guided evidence stays within the notebook's paper-and-ink language. */
+.guided-setup {
+  margin: 18px 0 0;
+}
+.setup-panel {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  padding: 25px;
+  background: #efefe4;
+}
+.setup-panel h2,
+.evidence-view h2 {
+  margin: 8px 0 13px;
+}
+.setup-panel form,
+.setup-report {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.setup-panel label,
+.evidence-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+.setup-panel input:not([type="checkbox"]),
+.evidence-form input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cbd1c0;
+  border-radius: 4px;
+  background: #fbfbf5;
+  color: var(--ink);
+  padding: 11px;
+}
+.setup-panel .filter-check {
+  display: flex;
+}
+.setup-panel button.primary {
+  justify-self: start;
+}
+.setup-panel pre {
+  overflow: auto;
+  max-height: 340px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fbfbf5;
+  padding: 16px;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.setup-checks,
+.review-checks,
+.health-suggestions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+.setup-checks li {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.synthetic-label {
+  color: var(--orange);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.evidence-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin: 24px 0 14px;
+}
+.review-card {
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+}
+.review-open {
+  text-align: left;
+  padding: 8px 0;
+}
+.review-open:hover {
+  color: var(--orange);
+}
+.commit-line {
+  font-size: 11px;
+  margin: 12px 0;
+}
+.commit-line code,
+.evidence-meta dd,
+.health-item code {
+  overflow-wrap: anywhere;
+}
+.review-evidence h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 18px 0 10px;
+}
+.evidence-meta {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 20px 0;
+  font-size: 11px;
+}
+.evidence-meta dt {
+  color: var(--subtle);
+}
+.evidence-meta dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.review-checks li {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.review-checks li p {
+  flex-basis: 100%;
+}
+.review-finding {
+  margin-top: 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  background: #efefe4;
+}
+.health-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 24px 0 18px;
+  border: 1px solid var(--line);
+}
+.health-summary div {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.health-summary dt {
+  font-size: 10px;
+  color: var(--subtle);
+  min-height: 30px;
+}
+.health-summary dd {
+  margin: 5px 0 0;
+  font-family: var(--serif);
+  font-size: 30px;
+}
+.health-suggestions {
+  margin: 22px 0;
+  padding: 17px;
+  background: #e9ecdc;
+  border-left: 2px solid #82936c;
+}
+.health-suggestions strong,
+.health-item strong {
+  font-size: 11px;
+  text-transform: capitalize;
+}
+.health-item {
+  padding: 17px 0;
+  border-top: 1px solid var(--line);
+}
+.health-item code {
+  display: block;
+  font-size: 10px;
+  margin: 7px 0;
+}
+.health-item ul {
+  padding-left: 18px;
+}
+.health-item li {
+  margin-top: 10px;
+}
+.tabs {
+  overflow-x: auto;
+}
+.tab {
+  flex-shrink: 0;
+}
+@media (max-width: 650px) {
+  .setup-panel {
+    padding: 18px;
+  }
+  .evidence-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .evidence-form button {
+    justify-self: start;
+  }
+  .health-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .evidence-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .evidence-meta dd {
+    margin-bottom: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
