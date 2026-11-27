@@ -4,6 +4,9 @@ A local Rust MCP server that helps AI assistants resume projects using saved
 notes, explicit decisions, and handoffs. SQLite keeps the records on your
 computer. Three companion skills explain how to retrieve and use them.
 
+Version 0.1.0 is published on [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/tag/v0.1.0)
+and in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.CharlieJamesGwapo%2Fproject-memory/versions/0.1.0).
+
 Distribution uses native GitHub release downloads and MCPB bundles. Source
 builds work independently of crates.io; public Cargo package publication is
 optional. Registry metadata for GitHub-hosted bundles is in `server.mcpb.json`;

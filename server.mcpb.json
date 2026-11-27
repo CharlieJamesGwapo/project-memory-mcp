@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.CharlieJamesGwapo/project-memory",
+  "title": "Project Memory",
+  "description": "Local project notes, decision history, and handoffs for AI assistants. Rust and SQLite.",
+  "repository": {
+    "url": "https://github.com/CharlieJamesGwapo/project-memory-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/download/v0.1.0/project-memory-mcp-0.1.0.mcpb",
+      "fileSha256": "68d0a222a99452937be3d3a6b44d4dd18c018997002bfe69581de107161a1cf7",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
