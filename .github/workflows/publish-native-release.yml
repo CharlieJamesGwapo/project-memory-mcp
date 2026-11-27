@@ -1,0 +1,122 @@
+name: Publish native release
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Prepare release binaries run ID
+        required: true
+        type: number
+permissions:
+  contents: write
+  actions: read
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN_ID: ${{ inputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Verify build provenance and unchanged Rust source
+        run: |
+          python - <<'PY'
+          import json,os,subprocess,tomllib
+          from pathlib import Path
+          run_id=str(int(os.environ['BUILD_RUN_ID']))
+          repository=os.environ['GITHUB_REPOSITORY']
+          run=json.loads(subprocess.check_output(['gh','api',f'repos/{repository}/actions/runs/{run_id}']))
+          assert run['conclusion']=='success' and run['name']=='Prepare release binaries'
+          assert run['event'] in ('workflow_dispatch','push')
+          assert run['path']=='.github/workflows/release.yml'
+          sha=run['head_sha']
+          subprocess.run(['git','merge-base','--is-ancestor',sha,'HEAD'],check=True)
+          subprocess.run(['git','diff','--exit-code',sha,'HEAD','--','src','Cargo.lock','.github/workflows/release.yml','scripts/package-release.py'],check=True)
+          before=tomllib.loads(subprocess.check_output(['git','show',f'{sha}:Cargo.toml'],text=True))
+          after=tomllib.loads(Path('Cargo.toml').read_text())
+          for section in ('dependencies','features','profile'):
+              assert before.get(section)==after.get(section),section
+          for field in ('name','version','edition','rust-version'):
+              assert before['package'].get(field)==after['package'].get(field),field
+          print('Verified successful trusted build with matching Rust code and dependencies:',sha)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id }}
+          pattern: project-memory-mcp-*
+          path: native-artifacts
+      - name: Verify and extract native archives
+        run: |
+          python - <<'PY'
+          import hashlib,tarfile,zipfile
+          from pathlib import Path
+          paths=[p for p in Path('native-artifacts').rglob('*') if p.name.endswith(('.tar.gz','.zip'))]
+          assert len(paths)==4,paths
+          Path('dist-release').mkdir()
+          for path in paths:
+              expected=Path(str(path)+'.sha256').read_text().split()[0]
+              assert hashlib.sha256(path.read_bytes()).hexdigest()==expected,path
+              target=Path('native-extracted')/path.parent.name
+              target.mkdir(parents=True)
+              if path.suffix=='.zip':
+                  with zipfile.ZipFile(path) as archive: archive.extractall(target)
+              else:
+                  with tarfile.open(path) as archive: archive.extractall(target,filter='data')
+          PY
+      - name: Combine macOS architectures and stage bundle
+        run: |
+          python - <<'PY'
+          import subprocess,tomllib
+          from pathlib import Path
+          version=tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+          def binary(target,filename='project-memory-mcp'):
+              root=Path('native-extracted')/f'project-memory-mcp-{target}'/f'project-memory-mcp-{version}-{target}'
+              return str(root/filename)
+          Path('universal').mkdir()
+          mac='universal/project-memory-mcp'
+          subprocess.run(['lipo','-create',binary('aarch64-apple-darwin'),binary('x86_64-apple-darwin'),'-output',mac],check=True)
+          Path(mac).chmod(0o755)
+          subprocess.run(['lipo','-info',mac],check=True)
+          for target in ('aarch64-apple-darwin','x86_64-apple-darwin','x86_64-unknown-linux-gnu','x86_64-pc-windows-msvc'):
+              filename='project-memory-mcp.exe' if 'windows' in target else 'project-memory-mcp'
+              subprocess.run(['python','scripts/package-release.py','--target',target,'--binary',binary(target,filename),'--output','dist-release'],check=True)
+          subprocess.run(['python','scripts/package-mcpb.py','--macos-universal',mac,'--linux-x64',binary('x86_64-unknown-linux-gnu'),'--windows-x64',binary('x86_64-pc-windows-msvc','project-memory-mcp.exe'),'--output-dir','bundle-staging'],check=True)
+          with open('bundle.env','w') as output: output.write(f'RELEASE_VERSION={version}\n')
+          PY
+      - name: Validate and pack official MCPB format
+        run: |
+          source bundle.env
+          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb validate bundle-staging/manifest.json
+          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb pack bundle-staging "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb"
+          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb unpack "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb" bundle-unpacked
+      - name: Smoke-test actual unpacked bundle
+        run: python scripts/smoke-test.py bundle-unpacked/server/darwin/project-memory-mcp
+      - name: Generate exact Registry metadata and checksums
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,tomllib
+          from pathlib import Path
+          version=tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
+          bundle=Path('dist-release')/f'project-memory-mcp-{version}.mcpb'
+          metadata=json.loads(Path('server.json').read_text())
+          assert metadata['name']=='io.github.CharlieJamesGwapo/project-memory'
+          metadata['packages']=[{'registryType':'mcpb','identifier':f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/releases/download/v{version}/{bundle.name}','fileSha256':hashlib.sha256(bundle.read_bytes()).hexdigest(),'transport':{'type':'stdio'}}]
+          Path('dist-release/server.mcpb.json').write_text(json.dumps(metadata,indent=2)+'\n')
+          files=sorted(p for p in Path('dist-release').iterdir() if p.is_file())
+          Path('dist-release/SHA256SUMS.txt').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files))
+          PY
+      - name: Publish GitHub Release with verified assets
+        run: |
+          source bundle.env
+          gh release create "v${RELEASE_VERSION}" dist-release/* \
+            --target "$GITHUB_SHA" \
+            --title "Project Memory MCP ${RELEASE_VERSION}" \
+            --notes-file "docs/releases/${RELEASE_VERSION}.md"

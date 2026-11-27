@@ -13,7 +13,7 @@ categories = ["command-line-utilities", "database"]
 include = ["src/**", "tests/*.rs", "tests/*_test.py", "scripts/*.py", "skills/**", "examples/**", "docs/publishing.md", "docs/skills.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "server.json"]
 
 [package.metadata.mcp]
-name = "io.github.charliejamesgwapo/project-memory"
+name = "io.github.CharlieJamesGwapo/project-memory"
 
 [dependencies]
 base64 = "0.22"

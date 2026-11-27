@@ -12,3 +12,11 @@ coverage/
 .superpowers/
 __pycache__/
 *.pyc
+dist-release/
+native-artifacts/
+native-extracted/
+bundle-staging/
+bundle-unpacked/
+registry-metadata/
+universal/
+bundle.env

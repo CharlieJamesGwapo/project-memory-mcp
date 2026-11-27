@@ -16,7 +16,7 @@ The user requested Rust during implementation. This supersedes the approved desi
 
 ## Global Constraints
 
-- Owner CharlieJamesGwapo; proposed repository project-memory-mcp; MCP name io.github.charliejamesgwapo/project-memory.
+- Owner CharlieJamesGwapo; repository project-memory-mcp; MCP name io.github.CharlieJamesGwapo/project-memory (case matches GitHub OIDC owner).
 - Ten tools: create_project, list_projects, get_project_context, get_record, save_note, search_notes, record_decision, save_handoff, export_project, delete_project.
 - No paid APIs, telemetry, source scanning, remote synchronization, or global skill/client configuration changes.
 - Explicit project IDs, author type user/assistant, timestamps, immutable records, and source references.

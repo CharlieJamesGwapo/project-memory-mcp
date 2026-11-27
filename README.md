@@ -4,9 +4,10 @@ A local Rust MCP server that helps AI assistants resume projects using saved
 notes, explicit decisions, and handoffs. SQLite keeps the records on your
 computer. Three companion skills explain how to retrieve and use them.
 
-**Release status:** v0.1.0 source and local build. This repository has not been
-published to crates.io or the MCP Registry by the build process. Package and
-repository names below are proposed publication identities.
+Distribution uses native GitHub release downloads and MCPB bundles. Source
+builds work independently of crates.io; public Cargo package publication is
+optional. Registry metadata for GitHub-hosted bundles is in `server.mcpb.json`;
+`server.json` is the separate Cargo publishing template.
 
 ## What it does
 
@@ -21,7 +22,18 @@ It saves what an assistant explicitly submits through tools. It does not read
 your chats, scan repositories, run shell commands, verify sources, or synchronize
 devices. Your AI client still controls what retrieved memory is sent to its model.
 
-## Build and run
+## Install a native release
+
+Download a native archive or MCPB bundle from [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases).
+Rust and a separate database service are unnecessary for the prebuilt binaries.
+The MCPB bundle supports macOS Apple Silicon and Intel, Linux x64 with compatible
+glibc, and Windows x64. A compatible MCPB client can install the bundle; otherwise
+extract the native archive and configure the executable as shown below.
+
+The three skills are included as files and remain a separate manual installation.
+See [skill installation](docs/skills.md).
+
+## Build and run from source
 
 Install [Rust](https://rustup.rs/) and the platform C compiler/build tools.
 The repository pins Rust 1.100.0. SQLite is bundled; a separate database service
@@ -240,8 +252,8 @@ Read [publishing instructions](docs/publishing.md) before creating public releas
 
 ## Links and license
 
-- Proposed repository: [CharlieJamesGwapo/project-memory-mcp](https://github.com/CharlieJamesGwapo/project-memory-mcp)
-- MCP Registry name: `mcp-name: io.github.charliejamesgwapo/project-memory`
+- Repository: [CharlieJamesGwapo/project-memory-mcp](https://github.com/CharlieJamesGwapo/project-memory-mcp)
+- MCP Registry name: `mcp-name: io.github.CharlieJamesGwapo/project-memory`
 - [Official Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk)
 - [MCP Cargo package publishing](https://modelcontextprotocol.io/registry/package-types)
 

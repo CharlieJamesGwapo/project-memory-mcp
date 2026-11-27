@@ -11,7 +11,7 @@ fn publication_metadata_matches_the_crate_and_skills_are_distributed() {
     assert_eq!(registry["version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(
         registry["name"],
-        "io.github.charliejamesgwapo/project-memory"
+        "io.github.CharlieJamesGwapo/project-memory"
     );
     assert_eq!(registry["packages"][0]["registryType"], "cargo");
     assert_eq!(
@@ -20,7 +20,7 @@ fn publication_metadata_matches_the_crate_and_skills_are_distributed() {
     );
     assert_eq!(registry["packages"][0]["transport"]["type"], "stdio");
     let readme = std::fs::read_to_string(root.join("README.md")).unwrap();
-    assert!(readme.contains("mcp-name: io.github.charliejamesgwapo/project-memory"));
+    assert!(readme.contains("mcp-name: io.github.CharlieJamesGwapo/project-memory"));
     for skill in ["resume-project", "record-decision", "prepare-handoff"] {
         assert!(root.join("skills").join(skill).join("SKILL.md").is_file());
     }

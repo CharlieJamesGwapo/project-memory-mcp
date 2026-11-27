@@ -1,8 +1,46 @@
 # Publish Project Memory MCP
 
-The source, executable, and listing metadata are prepared locally. They are not
-automatically published by building or testing. Use your own authenticated
-accounts; do not paste registry tokens into chats or commit them.
+Building and testing do not publish anything. Native release bundles can be
+hosted on GitHub and listed in the MCP Registry without a crates.io account or
+paid hosting. The current native route uses `server.mcpb.json`; `server.json`
+remains the optional Cargo publishing template. Do not paste tokens into chats
+or commit them.
+
+## GitHub-hosted native bundle route
+
+Run the release build workflow and require all four native builds to pass.
+Then dispatch `Publish native release` with that successful build run's ID.
+It verifies the producing workflow and matching Rust source, downloads/checksums
+the artifacts, assembles and smoke-tests the MCPB, regenerates native archives
+with current documentation, and creates the GitHub Release. The following
+commands describe the equivalent manual assembly:
+Download and checksum-check its native archives. Combine both macOS executables
+with `lipo -create` into a universal binary, then stage the universal macOS,
+Linux x64, and Windows x64 binaries with `scripts/package-mcpb.py`.
+
+Validate and pack the staging directory with the pinned official CLI:
+
+```sh
+npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb validate /path/to/staging/manifest.json
+npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb pack /path/to/staging /path/to/project-memory-mcp-0.1.0.mcpb
+```
+
+Unpack the actual MCPB and smoke-test its native binary. Upload it and the native
+archives to the versioned GitHub Release. Record its actual SHA-256 and immutable
+download URL in `server.mcpb.json`, then validate using the official publisher.
+Do not replace an asset referenced by an existing Registry version.
+
+The manual `Publish MCP Registry listing` GitHub workflow downloads the exact
+metadata asset from the matching versioned GitHub Release, validates it,
+verifies a pinned official publisher download with Sigstore, authenticates using
+GitHub Actions OIDC, and publishes the listing. It needs no stored personal
+access token or crates.io credentials. Invoke it only after the referenced release
+asset is public and verified. Its permissions are repository read plus identity
+token issuance; it cannot modify repository contents.
+
+Namespace spelling is significant: this repository's OIDC owner is
+`CharlieJamesGwapo`, so use `io.github.CharlieJamesGwapo/project-memory`.
+Do not lowercase the owner when generating listing metadata.
 
 ## 1. Publish the GitHub repository
 
@@ -38,7 +76,7 @@ The helper requires Python 3.11 or newer and only reads the archive. Review the
 crate inventory and licenses. Test the actual release binary with an MCP client
 outside the source directory and use a temporary synthetic database.
 
-## 3. Publish a Cargo package
+## 3. Publish a Cargo package (optional alternative)
 
 Check that the crate name `project-memory-mcp` is available or owned by you on
 [crates.io](https://crates.io/). GitHub authentication does not establish Cargo
@@ -68,19 +106,21 @@ there is no Cargo equivalent of an npx runtime runner.
 
 The visible README token is required for Cargo ownership verification:
 
-`mcp-name: io.github.charliejamesgwapo/project-memory`
+`mcp-name: io.github.CharlieJamesGwapo/project-memory`
 
 It must match `name` in server.json. Keep it visible: crates.io strips HTML
 comments when rendering README content. Package name and version must match
 the already-published crate. The checked-in server.json is a publishing template;
 its namespace and proposed package identity still require live verification.
 
-Use a current official mcp-publisher CLI:
+For the GitHub-native route, use the manual GitHub Actions workflow or a current
+official mcp-publisher CLI with `server.mcpb.json`. The Cargo route uses
+`server.json` only after the Cargo package has actually been published:
 
 ```sh
-mcp-publisher validate
+mcp-publisher validate server.mcpb.json
 mcp-publisher login github
-mcp-publisher publish
+mcp-publisher publish server.mcpb.json
 ```
 
 Check `mcp-publisher --help` for the current command arguments. At build time,

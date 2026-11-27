@@ -36,7 +36,7 @@ selects that approach. A hosted team product is outside this release.
 Public identity and distribution
 
 Proposed repository: https://github.com/CharlieJamesGwapo/project-memory-mcp
-Proposed MCP name: io.github.charliejamesgwapo/project-memory
+MCP name: io.github.CharlieJamesGwapo/project-memory (case matches GitHub OIDC owner)
 The npm package name depends on the user's verified npm account and package
 availability; ownership cannot be inferred from the GitHub username.
 
