@@ -54,7 +54,7 @@ No source changes after build freeze except fixes verified with regressions.
 
 ## Stage 6 — Publication (root)
 
-- [ ] Commit/push, observe core/Studio/security CI and four native targets.
-- [ ] Merge authorized release, publish new immutable MCPB/Studio/native artifacts.
-- [ ] Verify checksums/provenance/actual bundle and publish exact tag to Registry.
-- [ ] Read back metadata, commit public receipt and deliver guides/source links.
+- [x] Commit/push, observe core/Studio/security CI and four native targets.
+- [x] Merge authorized release, publish new immutable MCPB/Studio/native artifacts.
+- [x] Verify checksums/provenance/actual bundle and publish exact tag to Registry.
+- [x] Read back metadata, commit public receipt and deliver guides/source links.
