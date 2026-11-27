@@ -16,7 +16,7 @@ include = ["/src/**", "/tests/*.rs", "/tests/*_test.py", "/scripts/*.py", "/skil
 name = "io.github.CharlieJamesGwapo/project-memory"
 
 [dependencies]
-base64 = "0.22"
+base64 = "0.23"
 time = { version = "0.3", features = ["formatting", "parsing"] }
 clap = { version = "4", features = ["derive", "env"] }
 directories = "6"
