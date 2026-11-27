@@ -4,5 +4,6 @@ mod export;
 pub mod input;
 mod output;
 mod pagination;
+pub mod paths;
 pub mod server;
 pub mod store;

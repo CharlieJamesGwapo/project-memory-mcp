@@ -9,6 +9,8 @@ use rusqlite::{
 use serde_json::{Value, json};
 use std::{fs, path::Path, time::Duration};
 
+mod studio;
+
 pub struct Store {
     conn: Connection,
 }
@@ -26,6 +28,39 @@ fn timestamp() -> String {
 impl Store {
     pub fn memory() -> Result<Self> {
         Self::initialize(Connection::open_in_memory()?)
+    }
+
+    /// Open an existing Project Memory database without creating or changing it.
+    pub fn open_read_only(path: &Path) -> Result<Self> {
+        if !path.is_absolute() {
+            return Err(MemoryError::Validation(
+                "database path must be absolute".into(),
+            ));
+        }
+        if !fs::symlink_metadata(path)?.file_type().is_file() {
+            return Err(MemoryError::Validation(
+                "database path must be a regular file, not a directory or symlink".into(),
+            ));
+        }
+        let conn = Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        conn.busy_timeout(Duration::from_secs(5))?;
+        let application: i64 = conn.query_row("PRAGMA application_id", [], |r| r.get(0))?;
+        let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+        if application != 0x504d4350 {
+            return Err(MemoryError::ForeignDatabase);
+        }
+        if version > 1 {
+            return Err(MemoryError::NewerSchema);
+        }
+        if version != 1 {
+            return Err(MemoryError::ForeignDatabase);
+        }
+        conn.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects LIMIT 0")?;
+        conn.prepare(
+            "SELECT seq,id,project_id,kind,data,created_at,supersedes FROM records LIMIT 0",
+        )?;
+        conn.pragma_update(None, "query_only", true)?;
+        Ok(Self { conn })
     }
 
     pub fn open(path: &Path) -> Result<Self> {
@@ -159,6 +194,8 @@ impl Store {
         match operation {
             "create_project" => self.create_project(input::parse(args)?),
             "list_projects" => self.list_projects(input::parse(args)?),
+            "studio_list_projects" => self.studio_list_projects(input::parse(args)?),
+            "studio_list_records" => self.studio_list_records(input::parse(args)?),
             "get_project_context" => self.context(input::parse(args)?),
             "get_record" => {
                 let p: RecordId = input::parse(args)?;

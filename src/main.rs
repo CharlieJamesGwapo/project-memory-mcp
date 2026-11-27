@@ -1,6 +1,5 @@
 use clap::Parser;
-use directories::ProjectDirs;
-use project_memory_mcp::{server::MemoryServer, store::Store};
+use project_memory_mcp::{paths::default_database_path, server::MemoryServer, store::Store};
 use rmcp::{ServiceExt, transport::stdio};
 use std::{path::PathBuf, process::ExitCode};
 
@@ -31,10 +30,7 @@ async fn main() -> ExitCode {
 async fn run(args: Args) -> Result<(), String> {
     let path = match args.db {
         Some(path) => path,
-        None => ProjectDirs::from("", "", "project-memory-mcp")
-            .ok_or("Cannot find user data directory; provide --db /absolute/path")?
-            .data_local_dir()
-            .join("memory.sqlite"),
+        None => default_database_path().map_err(|error| error.to_string())?,
     };
     let store = Store::open(&path).map_err(|e| e.to_string())?;
     let service = MemoryServer::new(store).serve(stdio()).await.map_err(|_| {

@@ -137,6 +137,42 @@ pub struct DeleteProject {
     pub confirm: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordKind {
+    Note,
+    Decision,
+    Handoff,
+}
+
+impl RecordKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Note => "note",
+            Self::Decision => "decision",
+            Self::Handoff => "handoff",
+        }
+    }
+}
+
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct StudioRecords {
+    pub project_id: String,
+    #[serde(default)]
+    pub kind: Option<RecordKind>,
+    #[serde(default = "default_true")]
+    pub include_superseded: bool,
+    #[serde(default = "default_limit")]
+    pub limit: u32,
+    #[serde(default)]
+    pub cursor: Option<String>,
+}
+
 pub fn parse<T: DeserializeOwned>(input: Value) -> Result<T> {
     serde_json::from_value(input).map_err(|e| MemoryError::Validation(e.to_string()))
 }

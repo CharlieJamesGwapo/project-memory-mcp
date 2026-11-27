@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Local Studio window; database, clipboard and export actions pass through restricted Rust commands.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

@@ -10,7 +10,7 @@ repository = "https://github.com/CharlieJamesGwapo/project-memory-mcp"
 readme = "README.md"
 keywords = ["mcp", "ai", "memory", "sqlite", "skills"]
 categories = ["command-line-utilities", "database"]
-include = ["src/**", "tests/*.rs", "tests/*_test.py", "scripts/*.py", "skills/**", "examples/**", "docs/publishing.md", "docs/skills.md", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "server.json"]
+include = ["/src/**", "/tests/*.rs", "/tests/*_test.py", "/scripts/*.py", "/skills/**", "/examples/**", "/docs/publishing.md", "/docs/skills.md", "/docs/studio.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/CONTRIBUTING.md", "/SECURITY.md", "/server.json"]
 
 [package.metadata.mcp]
 name = "io.github.CharlieJamesGwapo/project-memory"

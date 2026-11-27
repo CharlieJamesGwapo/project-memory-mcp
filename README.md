@@ -4,6 +4,11 @@ A local Rust MCP server that helps AI assistants resume projects using saved
 notes, explicit decisions, and handoffs. SQLite keeps the records on your
 computer. Three companion skills explain how to retrieve and use them.
 
+[Project Memory Studio](docs/studio.md) is the desktop companion in
+`apps/studio`: browse existing archives, inspect decision history, and compose
+Markdown briefs from full records. It uses Tauri, React and the same Rust store.
+The Studio feature branch is separate from the published MCP v0.1.0 release.
+
 Version 0.1.0 is published on [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/tag/v0.1.0)
 and in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.CharlieJamesGwapo%2Fproject-memory/versions/0.1.0).
 

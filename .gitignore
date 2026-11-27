@@ -20,3 +20,6 @@ bundle-unpacked/
 registry-metadata/
 universal/
 bundle.env
+node_modules/
+dist/
+apps/studio/src-tauri/gen/
