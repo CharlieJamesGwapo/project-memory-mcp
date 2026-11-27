@@ -53,8 +53,8 @@ No automatic shell/network/model runtime. Keep prior versioned artifacts immutab
 
 ## Stage 5 — Publication (root)
 
-- [ ] Commit/push feature branch; observe three-OS CI/security/four native target success.
-- [ ] Merge authorized changes, publish new native/MCPB/Studio artifacts and attestations.
-- [ ] Publish exact tagged bundle metadata to official Registry.
-- [ ] Download, checksum, provenance, actual bundle smoke/evaluation and Registry readback.
-- [ ] Save public verification receipt and final user-facing guides with known limits.
+- [x] Commit/push feature branch; observe three-OS CI/security/four native target success.
+- [x] Merge authorized changes, publish new native/MCPB/Studio artifacts and attestations.
+- [x] Publish exact tagged bundle metadata to official Registry.
+- [x] Download, checksum, provenance, actual bundle smoke/evaluation and Registry readback.
+- [x] Save public verification receipt and final user-facing guides with known limits.

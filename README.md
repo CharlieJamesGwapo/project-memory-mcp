@@ -151,7 +151,7 @@ These provide scoped evidence, not a guarantee of malware absence. Read the
 | [Security](docs/security.md) | Threat model, actual audit limits, upstream warnings and release integrity |
 | [Troubleshooting](docs/troubleshooting.md) | Common setup, query, budget, SQLite and desktop problems |
 | [Publishing](docs/publishing.md) | Versioned builds, standard-library MCPB packing, provenance and MCP Registry |
-| [Release evidence](https://github.com/CharlieJamesGwapo/project-memory-mcp/blob/main/docs/releases/0.3.0-verification.md) | v0.3.0 source, checks, public download hashes, provenance and verification limits |
+| [Release evidence](https://github.com/CharlieJamesGwapo/project-memory-mcp/blob/main/docs/releases/0.4.0-verification.md) | v0.4.0 source, checks, public download hashes, provenance and verification limits |
 | [Contributing](CONTRIBUTING.md) | Tests, platform checks and contribution expectations |
 | [Changelog](CHANGELOG.md) | Changes and compatibility |
 
