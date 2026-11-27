@@ -485,3 +485,65 @@ it("refreshes the actual sample adapter without losing the project list", async 
     screen.queryByRole("heading", { name: "Every project begins somewhere." }),
   ).toBeNull();
 });
+
+it("opens unified memory search results in the existing full-record inspector", async () => {
+  const adapter = createSampleAdapter();
+  const user = userEvent.setup();
+  render(<App adapter={adapter} />);
+  await screen.findByRole("heading", { name: "Fieldwork Atlas" });
+  await user.click(screen.getByRole("tab", { name: "Search" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "Search all memory" }),
+    "beyond reliable",
+  );
+  await user.click(screen.getByRole("button", { name: "Search memory" }));
+  await user.click(
+    await screen.findByRole("button", {
+      name: /Open record: Keep the archive offline-first/,
+    }),
+  );
+  expect(
+    await screen.findByRole("heading", { name: "Why this decision" }),
+  ).toBeTruthy();
+});
+
+it("keeps manual selections until suggestions are explicitly added or replace the brief", async () => {
+  const adapter = createSampleAdapter();
+  const user = userEvent.setup();
+  render(<App adapter={adapter} />);
+  await screen.findByRole("heading", { name: "Fieldwork Atlas" });
+  await user.click(
+    await screen.findByRole("button", {
+      name: /Open record: Keep the archive offline-first/,
+    }),
+  );
+  await user.click(
+    await screen.findByRole("button", { name: "Add to context brief" }),
+  );
+  await user.click(screen.getByRole("button", { name: "Close record" }));
+  const brief = screen.getByRole("complementary", { name: "Context brief" });
+  await user.click(within(brief).getByText("Suggest context"));
+  await user.type(
+    screen.getByRole("textbox", { name: "Context task phrase" }),
+    "notebook",
+  );
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await screen.findByRole("button", { name: "Add suggestions" });
+  expect(
+    within(brief).getAllByRole("button", { name: /Remove .* from context/ }),
+  ).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: "Add suggestions" }));
+  expect(
+    within(brief).getAllByRole("button", { name: /Remove .* from context/ }),
+  ).toHaveLength(2);
+  await user.click(screen.getByRole("button", { name: "Replace brief" }));
+  expect(
+    within(brief).getAllByRole("button", { name: /Remove .* from context/ }),
+  ).toHaveLength(1);
+  expect(
+    within(brief).queryByRole("button", {
+      name: /Remove Keep the archive offline-first/,
+    }),
+  ).toBeNull();
+  expect(within(brief).getByText(/Markdown estimate:/)).toBeTruthy();
+});

@@ -7,28 +7,33 @@ on:
         required: true
         type: number
 permissions:
-  contents: write
-  actions: read
+  contents: read
 jobs:
-  release:
+  prepare:
     runs-on: macos-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
     env:
-      GH_TOKEN: ${{ github.token }}
       BUILD_RUN_ID: ${{ inputs.run_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.13'
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '24'
+      - name: Check source policy
+        run: python scripts/check-source-safety.py
       - name: Verify build provenance and unchanged Rust source
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
-          import json,os,subprocess,tomllib
+          import json,os,subprocess
           from pathlib import Path
           run_id=str(int(os.environ['BUILD_RUN_ID']))
           repository=os.environ['GITHUB_REPOSITORY']
@@ -36,18 +41,13 @@ jobs:
           assert run['conclusion']=='success' and run['name']=='Prepare release binaries'
           assert run['event'] in ('workflow_dispatch','push')
           assert run['path']=='.github/workflows/release.yml'
+          assert run['head_repository']['full_name']==repository
           sha=run['head_sha']
           subprocess.run(['git','merge-base','--is-ancestor',sha,'HEAD'],check=True)
-          subprocess.run(['git','diff','--exit-code',sha,'HEAD','--','src','Cargo.lock','.github/workflows/release.yml','scripts/package-release.py'],check=True)
-          before=tomllib.loads(subprocess.check_output(['git','show',f'{sha}:Cargo.toml'],text=True))
-          after=tomllib.loads(Path('Cargo.toml').read_text())
-          for section in ('dependencies','features','profile'):
-              assert before.get(section)==after.get(section),section
-          for field in ('name','version','edition','rust-version'):
-              assert before['package'].get(field)==after['package'].get(field),field
+          subprocess.run(['git','diff','--exit-code',sha,'HEAD','--','src','Cargo.toml','Cargo.lock','rust-toolchain.toml','build.rs','.github/workflows/release.yml','scripts/package-release.py'],check=True)
           print('Verified successful trusted build with matching Rust code and dependencies:',sha)
           PY
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.run_id }}
@@ -91,18 +91,42 @@ jobs:
           subprocess.run(['python','scripts/package-mcpb.py','--macos-universal',mac,'--linux-x64',binary('x86_64-unknown-linux-gnu'),'--windows-x64',binary('x86_64-pc-windows-msvc','project-memory-mcp.exe'),'--output-dir','bundle-staging'],check=True)
           with open('bundle.env','w') as output: output.write(f'RELEASE_VERSION={version}\n')
           PY
-      - name: Validate and pack official MCPB format
+      - name: Validate, ZIP and unpack the generated MCPB contract
         run: |
           source bundle.env
-          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb validate bundle-staging/manifest.json
-          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb pack bundle-staging "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb"
-          npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb unpack "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb" bundle-unpacked
+          python scripts/package-mcpb.py --pack bundle-staging --archive "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb"
+          python scripts/package-mcpb.py --unpack "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb" --output-dir bundle-unpacked
       - name: Smoke-test actual unpacked bundle
         run: python scripts/smoke-test.py bundle-unpacked/server/darwin/project-memory-mcp
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '26'
+      - name: Install the desktop build toolchain
+        run: rustup toolchain install 1.100.0 --profile minimal --target aarch64-apple-darwin
+      - name: Test and build the macOS arm64 Studio preview
+        working-directory: apps/studio
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/studio
+        run: |
+          npm ci --ignore-scripts
+          npm test
+          npm run build
+          cargo test --locked --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol
+          npm run tauri -- build --target aarch64-apple-darwin --bundles app
+      - name: Package the desktop preview with its guide and licenses
+        run: |
+          source bundle.env
+          mkdir -p studio-preview/licenses
+          ditto "target/studio/aarch64-apple-darwin/release/bundle/macos/Project Memory Studio.app" "studio-preview/Project Memory Studio.app"
+          cp docs/studio-download-readme.md studio-preview/README.md
+          cp LICENSE studio-preview/LICENSE
+          cp apps/studio/public/licenses/*.txt studio-preview/licenses/
+          ditto -c -k --keepParent studio-preview "dist-release/project-memory-studio-${RELEASE_VERSION}-macos-arm64.zip"
       - name: Generate exact Registry metadata and checksums
+        id: metadata
         run: |
           python - <<'PY'
-          import hashlib,json,os,tomllib
+          import hashlib,json,os,shutil,tomllib
           from pathlib import Path
           version=tomllib.loads(Path('Cargo.toml').read_text())['package']['version']
           bundle=Path('dist-release')/f'project-memory-mcp-{version}.mcpb'
@@ -112,11 +136,58 @@ jobs:
           Path('dist-release/server.mcpb.json').write_text(json.dumps(metadata,indent=2)+'\n')
           files=sorted(p for p in Path('dist-release').iterdir() if p.is_file())
           Path('dist-release/SHA256SUMS.txt').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files))
+          shutil.copyfile(f'docs/releases/{version}.md','release-notes.md')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output: output.write(f'version={version}\n')
           PY
-      - name: Publish GitHub Release with verified assets
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: prepared-release-assets
+          path: |
+            dist-release/
+            release-notes.md
+          if-no-files-found: error
+          retention-days: 7
+  attest:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: prepared-release-assets
+          path: prepared
+      - name: Attest the exact release assets
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: prepared/dist-release/*
+  publish:
+    needs: [prepare, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: prepared-release-assets
+          path: prepared
+      - name: Verify provenance and publish a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          source bundle.env
-          gh release create "v${RELEASE_VERSION}" dist-release/* \
+          for bundle in prepared/dist-release/*.mcpb; do
+            gh attestation verify "$bundle" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish-native-release.yml" \
+              --source-digest "$GITHUB_SHA" --deny-self-hosted-runners
+          done
+          gh release create "v${RELEASE_VERSION}" prepared/dist-release/* \
+            --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "Project Memory MCP ${RELEASE_VERSION}" \
-            --notes-file "docs/releases/${RELEASE_VERSION}.md"
+            --notes-file prepared/release-notes.md

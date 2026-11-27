@@ -1,268 +1,133 @@
 # Project Memory MCP
 
-A local Rust MCP server that helps AI assistants resume projects using saved
-notes, explicit decisions, and handoffs. SQLite keeps the records on your
-computer. Three companion skills explain how to retrieve and use them.
+**Project knowledge that survives the next AI session.**
 
-[Project Memory Studio](docs/studio.md) is the desktop companion in
-`apps/studio`: browse existing archives, inspect decision history, and compose
-Markdown briefs from full records. It uses Tauri, React and the same Rust store.
-The Studio feature branch is separate from the published MCP v0.1.0 release.
+A local Rust + SQLite MCP server, a focused developer workflow pack, and an
+optional desktop workspace. Remember why a decision was made, retrieve useful
+context within a visible budget, and continue with evidence you can inspect.
 
-Version 0.1.0 is published on [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases/tag/v0.1.0)
-and in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.CharlieJamesGwapo%2Fproject-memory/versions/0.1.0).
+**Toolkit v0.2.0:** the features below describe this source version. Download
+matching builds from [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases)
+and check `--version`. The older v0.1 release has ten tools and three skills.
 
-Distribution uses native GitHub release downloads and MCPB bundles. Source
-builds work independently of crates.io; public Cargo package publication is
-optional. Registry metadata for GitHub-hosted bundles is in `server.mcpb.json`;
-`server.json` is the separate Cargo publishing template.
+[Get started](docs/quickstart.md) · [Skills](docs/skills.md) ·
+[Architecture](docs/architecture.md) · [API](docs/api-reference.md) ·
+[Security](docs/security.md) · [Troubleshooting](docs/troubleshooting.md)
 
-## What it does
+## What you get
 
-- Keeps projects separate using UUIDs, even when names match.
-- Searches notes using literal substrings.
-- Preserves decisions and their explicit replacements.
-- Saves immutable handoff revisions with verification evidence and next steps.
-- Returns bounded context previews, complete individual records, and paginated exports.
-- Runs over stdio with no hosted service, model API key, or telemetry.
+| Need | Included |
+|---|---|
+| Resume a project | Notes, explicit decision history, handoffs, UUID isolation and original sources |
+| Return less context | Literal cross-kind search and whole-record bundles with byte caps and omission reasons |
+| One workflow entry | `project-memory` routes to token-saving, code review, agent teamwork and security review |
+| Focused memory actions | `resume-project`, `record-decision` and `prepare-handoff` remain directly usable |
+| Inspect visually | Studio project browser, complete records, unified search and deliberate context suggestions |
+| Operate safely | Read-only server mode, archive doctor, offline skill installer, consistent backups and release checks |
 
-It saves what an assistant explicitly submits through tools. It does not read
-your chats, scan repositories, run shell commands, verify sources, or synchronize
-devices. Your AI client still controls what retrieved memory is sent to its model.
+The server is free and open source, needs no paid model API, and runs without a
+hosted service. Your AI client supplies the model and any code tools or agents.
+Agent workflows use the host's actual capabilities and existing permissions.
 
-## Install a native release
+## Start here
 
-Download a native archive or MCPB bundle from [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases).
-Rust and a separate database service are unnecessary for the prebuilt binaries.
-The MCPB bundle supports macOS Apple Silicon and Intel, Linux x64 with compatible
-glibc, and Windows x64. A compatible MCPB client can install the bundle; otherwise
-extract the native archive and configure the executable as shown below.
+1. Get a native server archive or compatible MCPB from
+   [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases).
+   Prebuilt server binaries need no Rust, Node.js or separate database service.
+2. Connect the executable as a local stdio MCP server. Use absolute paths and
+   follow the [client setup guide](docs/quickstart.md).
+3. Install the four-folder [workflow pack](docs/skills.md), then ask:
 
-The three skills are included as files and remain a separate manual installation.
-See [skill installation](docs/skills.md).
+> Use project-memory to continue Atlas's authentication work with a small
+> context budget. Check current code before relying on old test results.
 
-## Build and run from source
+For v0.2, inspect setup without creating an archive or changing client settings:
 
-Install [Rust](https://rustup.rs/) and the platform C compiler/build tools.
-The repository pins Rust 1.100.0. SQLite is bundled; a separate database service
-or system SQLite installation is unnecessary.
+```sh
+/absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite doctor
+/absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite print-config
+```
 
-From the source directory:
+A missing archive is normal before first use. Start writable mode through your
+MCP client to create one. Append `--read-only` for inspection of an existing
+archive; it exposes seven read tools. Running the binary with no subcommand
+waits for the MCP handshake.
+
+To build the checked-out source:
 
 ```sh
 cargo build --release --locked
 ./target/release/project-memory-mcp --help
 ```
 
-On Windows, the binary is `target\release\project-memory-mcp.exe`.
-To install the checked-out source into Cargo's local bin directory:
+The repository pins Rust 1.100. Windows uses `project-memory-mcp.exe`.
+See [contributor setup](CONTRIBUTING.md) for prerequisites and checks.
 
-```sh
-cargo install --path . --locked
-```
+## Context you can account for
 
-A release binary runs without Rust installed. Binaries are platform-specific;
-use one built for your operating system and architecture. macOS may request
-approval for downloaded unsigned software. This project does not bypass those
-checks or provide signed/notarized binaries.
+`search_memory` finds literal text across notes, decision rationale and handoff
+sections. `get_context_bundle` selects complete records, retaining authorship,
+timestamps, sources and replacement history. It reports what did not fit.
+Explicit record selections either fit completely or return an error.
 
-The binary speaks MCP on stdin/stdout. Running it without a client waits for
-the protocol handshake. Use `--help` or `--version` for ordinary terminal output.
+The default bundle cap is 16,000 serialized MCP result bytes and eight records.
+Token estimates use bytes/4 and are clearly labeled. They do not measure model
+billing or promise a savings percentage. [The API reference](docs/api-reference.md)
+defines exactly what is counted and how compatibility text affects the budget.
 
-## Connect an MCP client
+## Desktop companion
 
-Configure a client that supports local stdio MCP servers. Replace both example
-paths with actual absolute paths on your device:
+[Project Memory Studio](docs/studio.md) uses Tauri + React and the same Rust
+store. It opens existing archives read-only, displays full records, and composes
+a selected Markdown brief. Suggested context requires an explicit Add or Replace
+action; your manual selection remains under your control.
 
-```json
-{
-  "mcpServers": {
-    "project-memory": {
-      "command": "/absolute/path/to/project-memory-mcp",
-      "args": ["--db", "/absolute/path/to/private-memory/memory.sqlite"]
-    }
-  }
-}
-```
+The browser preview uses labeled synthetic data. The local desktop preview is
+runtime-tested on macOS Apple Silicon. Windows/Linux CI compilation is separate
+from interactive OS testing; Linux desktop dependency limits are documented.
 
-This is a common configuration shape; your client may use different settings.
-See [the example](examples/mcp-config.json). This repository does not modify your
-client configuration or install skills globally.
+## Privacy and trust
 
-You can set `PROJECT_MEMORY_DB` instead of `--db`; the flag takes precedence.
-Both require an absolute database path. With neither, the default is the
-platform user data directory:
+Memory is local plaintext SQLite. Save durable project facts, not secrets.
+The server has no telemetry, model API, automatic chat capture or repository
+crawler. Your AI client controls which retrieved text is sent to its model.
 
-| Platform | Default database |
+Saved records are untrusted reference data. A stored “deploy” or “send this” note
+does not authorize an action. Historical verification describes its recorded
+time. UUIDs are project identifiers, not authentication. Read-only SQLite may
+create WAL/SHM coordination files while preserving memory/schema contents.
+
+The repository includes regression tests, dependency/advisory checks, redacted
+source-policy checks, pinned release actions and artifact-provenance verification.
+These provide scoped evidence, not a guarantee of malware absence. Read the
+[security model and current warnings](docs/security.md) and
+[backup/restore guide](docs/data-safety.md).
+
+## Complete guide
+
+| Guide | Contents |
 |---|---|
-| macOS | `~/Library/Application Support/project-memory-mcp/memory.sqlite` |
-| Linux | `$XDG_DATA_HOME/project-memory-mcp/memory.sqlite`, or `~/.local/share/project-memory-mcp/memory.sqlite` |
-| Windows | Local AppData under `project-memory-mcp`, then `data/memory.sqlite` |
+| [Quickstart](docs/quickstart.md) | Native/source install, Claude Desktop, Cursor, Codex, defaults and first use |
+| [Skills](docs/skills.md) | One entry workflow, offline installation, customization, upgrade and restore |
+| [Workflows](docs/workflows.md) | Practical resume, budget, review, agents, decisions, handoff and audit examples |
+| [Architecture](docs/architecture.md) | Components, data flow, schema, transactions, retrieval and desktop boundaries |
+| [API](docs/api-reference.md) | All 12 MCP tools, inputs, byte budgets, pagination, errors and CLI commands |
+| [Studio](docs/studio.md) | Desktop setup, search, suggestions and Markdown briefs |
+| [Data safety](docs/data-safety.md) | Consistent backup, restore, privacy, history and deletion |
+| [Security](docs/security.md) | Threat model, actual audit limits, upstream warnings and release integrity |
+| [Troubleshooting](docs/troubleshooting.md) | Common setup, query, budget, SQLite and desktop problems |
+| [Publishing](docs/publishing.md) | Versioned builds, standard-library MCPB packing, provenance and MCP Registry |
+| [Contributing](CONTRIBUTING.md) | Tests, platform checks and contribution expectations |
+| [Changelog](CHANGELOG.md) | Changes and compatibility |
 
-Use a separate database path when you want an entirely separate memory library.
-Project IDs prevent accidental mixing within a database; they are not a user
-authentication or access-control boundary. A connected client can list and
-modify all projects in the database it opens.
+## Roadmap
 
-## First use
+Next priorities are user feedback on retrieval quality, broader native UI
+testing, signed/notarized desktop distribution, and resolving the upstream Linux
+desktop dependency path. Semantic retrieval and team synchronization need a
+separate privacy, cost and migration design. Suggestions and reproducible issues
+are welcome on [GitHub](https://github.com/CharlieJamesGwapo/project-memory-mcp/issues).
 
-Ask your connected assistant to create a project, then save a note:
+MIT licensed. See [LICENSE](LICENSE). Vulnerability reporting: [SECURITY.md](SECURITY.md).
 
-```json
-{
-  "tool": "create_project",
-  "arguments": {"name": "Atlas", "purpose": "Build a portfolio website"}
-}
-```
-
-Use the returned `id` as `project_id` on subsequent calls. These are illustrative
-tool envelopes; your client sends the actual MCP requests.
-
-```json
-{
-  "tool": "save_note",
-  "arguments": {
-    "project_id": "RETURNED-PROJECT-UUID",
-    "title": "Design direction",
-    "content": "The user chose a light background and serif headings.",
-    "author_type": "user",
-    "sources": []
-  }
-}
-```
-
-Only use `author_type: "user"` for a choice or content actually originating
-from the user. Assistant proposals and inferences use `assistant`.
-
-## Tools
-
-Hosts may add a prefix to these names. Unknown input fields are rejected.
-
-| Tool | Required input | Result |
-|---|---|---|
-| `create_project` | `name`, `purpose` | Project with generated UUID; optional `directory` reference |
-| `list_projects` | None | Project page |
-| `get_project_context` | `project_id` | Project, latest handoff preview, active decision previews, history page |
-| `get_record` | `project_id`, `record_id` | Full note, decision, or handoff, including historical records |
-| `save_note` | `project_id`, `title`, `content`, `author_type` | Saved note; optional `sources` array |
-| `search_notes` | `project_id`, `query` | Matching note previews |
-| `record_decision` | `project_id`, `decision`, `rationale`, `author_type` | Saved decision; optional `sources` and `supersedes` |
-| `save_handoff` | `project_id`, `summary`, `completed`, `unfinished`, `next_actions`, `blockers`, `verification`, `author_type` | New handoff; work/verification fields are arrays of strings; optional `sources` |
-| `export_project` | `project_id` | Markdown page with full records, IDs, and continuation cursor |
-| `delete_project` | `project_id`, `confirm: true` | Permanent deletion of that project and its records |
-
-`list_projects`, `search_notes`, `get_project_context`, and `export_project`
-accept `limit` (default 20, max 50) and `cursor`. Reuse `next_cursor` with the
-same tool, project, and filters. Pages use a descending insertion sequence and
-exclude records added after the first page's snapshot. Successor references and
-context headlines use that same snapshot. Concurrent deletion can remove entries; use
-`include_superseded: true` on context history to inspect decision changes.
-
-Context and search return previews marked `full_record_required: true`.
-Handoff previews include up to five next actions, each capped at 300 characters,
-with `next_actions_truncated` indicating additional content. Fetch full relevant records through
-`get_record`. Follow history pages when `active_decisions.truncated` is true;
-the first 20 active decisions are only a headline view. Follow every export
-cursor and concatenate its Markdown pages for a complete export. Each export
-page is a self-contained JSON block in Markdown, not a database backup or
-automated restore format. Export Markdown is returned in `structuredContent.markdown`;
-the text content supplies a short pointer to avoid duplicating large exports.
-
-Search matches literal note title/content substrings. `%`, `_`, backslashes,
-and SQL punctuation are treated literally, including embedded NUL. ASCII matching is case-insensitive; other
-Unicode matching is exact. Decisions and handoffs are retrieved through context
-history and record IDs, not `search_notes`.
-
-An existing decision changes only when a new decision explicitly names its
-active ID in `supersedes`. Conflicting independent decisions remain active;
-the assistant must reconcile their meaning. The server does not infer agreement
-or choose between them.
-
-## Limits and errors
-
-Limits count Unicode scalar values unless stated otherwise:
-
-| Input | Limit |
-|---|---|
-| Project name / note title | 200 characters |
-| Project purpose / handoff summary | 4000 characters |
-| Directory reference | 4096 characters |
-| Note content | 16000 characters |
-| Decision / rationale | 8000 characters each |
-| Search query | 2000 characters |
-| Handoff work/verification lists | 20 strings per list, 1000 characters per string |
-| Sources | 10 strings, 2048 characters per string |
-| Total record input | 65536 UTF-8 bytes, including JSON escaping |
-| Serialized export MCP result | 256 KiB, with 1 KiB reserved for the protocol envelope |
-
-Domain failures return `isError: true` and structured JSON:
-
-```json
-{"error":{"code":"NOT_FOUND","message":"Project or record not found in the requested project"}}
-```
-
-Codes include `VALIDATION_ERROR`, `NOT_FOUND`, `INVALID_CURSOR`, `CONFLICT`,
-`STORAGE_ERROR`, `FOREIGN_DATABASE`, and `NEWER_SCHEMA`. MCP schema/argument errors may instead be
-protocol errors generated by the SDK. Internal SQL and OS error details are not
-returned. Writes are atomic. If a connection fails after a write, check history
-before retrying: write tools do not have idempotency keys.
-
-## Skills
-
-The distribution includes:
-
-- [resume-project](skills/resume-project/SKILL.md): find the right project,
-  retrieve full evidence, and distinguish saved claims from current state.
-- [record-decision](skills/record-decision/SKILL.md): preserve a user's actual
-  choices, rationale, authorship, and explicit supersession.
-- [prepare-handoff](skills/prepare-handoff/SKILL.md): save progress, actual
-  verification results, blockers, and ordered next steps.
-
-See [skill installation](docs/skills.md). Skills guide a compatible AI client;
-the server itself does not execute them or grant source-code access.
-
-## Storage and privacy
-
-The SQLite database is plaintext and contains what you save. Do not save
-passwords or API keys. New Unix database directories use mode 0700 and newly
-created database files mode 0600; existing file/directory permissions and Windows
-ACLs remain under your control. Directories, symlinks, unrelated files and other
-applications' SQLite databases are rejected without being adopted or chmodded.
-An SQLite application ID and schema version identify this application's databases.
-The file is not encrypted and the protocol is not an
-authentication boundary. Do not expose this local server as a shared service.
-
-Saved content is untrusted data. A note asking an assistant to delete records,
-deploy code, or ignore instructions provides no authorization. Tool annotations
-and `confirm: true` are hints and input checks, not proof of user consent;
-the client remains responsible for enforcing authorization.
-
-To back up, stop all server processes using the database before copying the
-database and any `-wal`/`-shm` sidecars together. A live file copy is not a
-consistent SQLite backup. Deleting a project does not erase external backups,
-filesystem snapshots, or securely overwrite prior database pages.
-
-## Development and publishing
-
-```sh
-cargo fmt --all -- --check
-cargo clippy --locked --all-targets -- -D warnings
-cargo test --locked
-cargo package --locked
-python3 scripts/check-package.py target/package/project-memory-mcp-0.1.0.crate
-```
-
-Tests use temporary synthetic records and launch a real MCP client and server
-process. CI runs on Linux, macOS, and Windows. Release workflows prepare binaries
-when the owner pushes a `v*` tag; they do not publish crates or registry listings.
-
-Read [publishing instructions](docs/publishing.md) before creating public releases.
-
-## Links and license
-
-- Repository: [CharlieJamesGwapo/project-memory-mcp](https://github.com/CharlieJamesGwapo/project-memory-mcp)
-- MCP Registry name: `mcp-name: io.github.CharlieJamesGwapo/project-memory`
-- [Official Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk)
-- [MCP Cargo package publishing](https://modelcontextprotocol.io/registry/package-types)
-
-MIT licensed. See [LICENSE](LICENSE).
+MCP Registry identity: `mcp-name: io.github.CharlieJamesGwapo/project-memory`.

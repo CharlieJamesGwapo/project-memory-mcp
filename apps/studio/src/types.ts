@@ -88,3 +88,33 @@ export interface MemoryAdapter {
   copy(markdown: string): Promise<void>;
   save(markdown: string): Promise<{ saved: boolean; file_name: string | null }>;
 }
+
+export type SelectionReason =
+  | "explicit_selection"
+  | "literal_query_match"
+  | "latest_handoff"
+  | "active_decision"
+  | "recent_note";
+export interface ContextBundle {
+  project: Pick<
+    Project,
+    "id" | "name" | "purpose" | "directory" | "created_at"
+  >;
+  records: (MemoryRecord & { selection_reason: SelectionReason })[];
+  selection: {
+    mode: "explicit" | "query" | "recent";
+    candidate_count: number;
+    candidate_window_truncated: boolean;
+    omitted_by_budget: number;
+    omitted_by_record_limit: number;
+    selection_complete: boolean;
+  };
+  budget: {
+    max_bytes: number;
+    used_bytes: number;
+    max_records: number;
+    estimated_tokens: number;
+    estimate_method: string;
+  };
+  notice: string;
+}

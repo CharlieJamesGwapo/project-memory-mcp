@@ -8,6 +8,11 @@ import type {
   ProjectContext,
 } from "./types";
 import { formatContext } from "./context";
+import {
+  matchesHumanText,
+  sampleContextBundle,
+  validLiteralQuery,
+} from "./sampleRetrieval";
 const projectIds = [
   "2c82826a-2ed0-4be2-93e2-0a87ad106501",
   "2c82826a-2ed0-4be2-93e2-0a87ad106502",
@@ -225,7 +230,7 @@ function page<T>(
   const limit = Math.min(50, Math.max(1, Number(args.limit) || 20));
   let offset = 0;
   if (args.cursor) {
-    const parsed = JSON.parse(atob(String(args.cursor))) as {
+    const parsed = JSON.parse(decodeURIComponent(String(args.cursor))) as {
       key: string;
       offset: number;
     };
@@ -235,7 +240,7 @@ function page<T>(
   }
   const next =
     offset + limit < items.length
-      ? btoa(JSON.stringify({ key, offset: offset + limit }))
+      ? encodeURIComponent(JSON.stringify({ key, offset: offset + limit }))
       : null;
   return {
     items: structuredClone(items.slice(offset, offset + limit)),
@@ -277,7 +282,8 @@ export function createSampleAdapter(): MemoryAdapter {
         operation,
         project.id,
         args.kind ?? null,
-        args.include_superseded ?? true,
+        args.include_superseded ??
+          (operation === "search_memory" ? false : true),
         args.query ?? "",
       ]);
       if (operation === "studio_list_records")
@@ -307,6 +313,23 @@ export function createSampleAdapter(): MemoryAdapter {
           key,
         ) as T;
       }
+      if (operation === "search_memory") {
+        if (!validLiteralQuery(args.query)) throw { code: "VALIDATION_ERROR" };
+        return page(
+          scoped
+            .filter(
+              (record) =>
+                (!args.kind || record.kind === args.kind) &&
+                (args.include_superseded === true || !record.superseded_by) &&
+                matchesHumanText(record, String(args.query)),
+            )
+            .map(preview),
+          args,
+          key,
+        ) as T;
+      }
+      if (operation === "get_context_bundle")
+        return sampleContextBundle(project, scoped, args) as T;
       if (operation === "get_project_context") {
         const context: ProjectContext = {
           project: structuredClone(project),

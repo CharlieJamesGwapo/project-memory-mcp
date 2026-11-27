@@ -64,6 +64,37 @@ fn native_queries_reject_writes_and_stale_sessions() {
 }
 
 #[test]
+fn bridge_accepts_full_budgeted_context_and_unified_search() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("memory.sqlite");
+    let project_id = database(&path, "Toolkit");
+    let content = format!("{} END OF COMPLETE NOTE", "café 日本語 ".repeat(70));
+    let mut writer = Store::open(&path).unwrap();
+    writer.execute("save_note",json!({"project_id":project_id,"title":"Evidence","content":content,"author_type":"user"})).unwrap();
+    drop(writer);
+    let mut session = StudioSession::new(None);
+    let id = session.open_database(&path).unwrap().session_id.unwrap();
+    let found = session
+        .query(
+            &id,
+            "search_memory",
+            json!({"project_id":project_id,"query":"END OF COMPLETE NOTE"}),
+        )
+        .unwrap();
+    assert_eq!(found["items"].as_array().unwrap().len(), 1);
+    let bundle = session
+        .query(
+            &id,
+            "get_context_bundle",
+            json!({"project_id":project_id,"query":"END OF COMPLETE NOTE","max_bytes":16000}),
+        )
+        .unwrap();
+    assert_eq!(bundle["records"][0]["content"], content);
+    assert!(bundle["budget"]["used_bytes"].as_u64().unwrap() <= 16000);
+    assert_eq!(bundle["selection"]["selection_complete"], true);
+}
+
+#[test]
 fn failed_file_selection_preserves_the_previous_connection() {
     let temp = tempfile::tempdir().unwrap();
     let a = temp.path().join("a.sqlite");

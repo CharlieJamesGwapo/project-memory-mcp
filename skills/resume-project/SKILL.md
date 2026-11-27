@@ -10,8 +10,8 @@ it does not restore chats, read source files, or verify old claims.
 
 ## Find the project
 
-Discover the connected tools; hosts may prefix their names. Required tools
-are `list_projects`, `get_project_context`, and `get_record`. If unavailable,
+Discover the connected tools; hosts may prefix their names. The fallback uses
+`list_projects`, `get_project_context`, and `get_record`. If unavailable,
 explain the missing connection and continue from context the user supplies.
 Do not claim to have retrieved memory.
 
@@ -23,7 +23,16 @@ Resuming does not authorize creating a replacement project.
 
 ## Recover enough evidence
 
-Call `get_project_context` with `project_id`. Its `latest_handoff`,
+When available, `get_context_bundle` can retrieve relevant whole records under
+an exact serialized-result byte cap; `search_memory` can locate literal matches
+across record kinds. For budgeted recovery, read the bundled
+[token saver reference](../project-memory/references/token-saver.md). It defines
+the v0.2 tool contracts, omission handling, and heuristic token accounting.
+Bundle records are complete; do not retrieve the same records again without a
+reason. Check material omissions before relying on the resulting brief.
+
+Otherwise call `get_project_context` with `project_id` and a small `limit`
+appropriate to the task. Its `latest_handoff`,
 `active_decisions.items`, and `history.items` contain previews, not full
 records. Retrieve the relevant handoff and decisions using `get_record` with
 both `project_id` and `record_id`, even when a preview looks complete.

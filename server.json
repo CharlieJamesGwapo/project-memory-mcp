@@ -3,17 +3,28 @@
   "name": "io.github.CharlieJamesGwapo/project-memory",
   "title": "Project Memory",
   "description": "Local project notes, decision history, and handoffs for AI assistants. Rust and SQLite.",
-  "repository": { "url": "https://github.com/CharlieJamesGwapo/project-memory-mcp", "source": "github" },
-  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/CharlieJamesGwapo/project-memory-mcp",
+    "source": "github"
+  },
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "cargo",
       "registryBaseUrl": "https://crates.io",
       "identifier": "project-memory-mcp",
-      "version": "0.1.0",
-      "transport": { "type": "stdio" },
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
       "environmentVariables": [
-        { "name": "PROJECT_MEMORY_DB", "description": "Optional absolute path to your local SQLite database", "isRequired": false, "isSecret": false, "format": "filepath" }
+        {
+          "name": "PROJECT_MEMORY_DB",
+          "description": "Optional absolute path to your local SQLite database",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "filepath"
+        }
       ]
     }
   ]

@@ -113,6 +113,8 @@ impl StudioSession {
                 | "get_project_context"
                 | "get_record"
                 | "search_notes"
+                | "search_memory"
+                | "get_context_bundle"
                 | "export_project"
         ) {
             return Err(StudioError::new(

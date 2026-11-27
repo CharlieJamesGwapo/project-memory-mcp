@@ -1422,3 +1422,160 @@ h4,
 .project-button > span:last-child {
   min-width: 0;
 }
+
+/* Optional retrieval tools follow the notebook's existing type and spacing. */
+.unified-search .search-form {
+  margin-top: 12px;
+  max-width: none;
+}
+.retrieval-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin: 16px 0 24px;
+}
+.retrieval-filter-row > label:first-child {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--subtle);
+}
+.retrieval-filter-row select {
+  border: 1px solid #cbd1c0;
+  border-radius: 4px;
+  padding: 7px;
+  background: #faf9f3;
+  color: var(--ink);
+  font: inherit;
+}
+.memory-results .section-label {
+  display: block;
+  margin-bottom: 9px;
+}
+.suggestions {
+  border-top: 1px solid #cdd4c1;
+  border-bottom: 1px solid #cdd4c1;
+  margin: 0 0 19px;
+}
+.suggestions summary {
+  cursor: pointer;
+  padding: 13px 0;
+  font-size: 11px;
+  font-weight: 550;
+}
+.suggestions summary:focus-visible,
+select:focus-visible {
+  outline: 2px solid #a64e31;
+  outline-offset: 3px;
+}
+.suggestion-body {
+  padding: 0 0 15px;
+}
+.suggestion-intro,
+.suggestion-explanation {
+  font-size: 10px;
+  line-height: 1.75;
+  color: #5f6d5c;
+  margin: 0 0 12px;
+}
+.suggestion-intro {
+  color: var(--ink);
+}
+.suggestion-field {
+  display: grid;
+  gap: 7px;
+  font-size: 9px;
+  color: #5f6d5c;
+  margin: 14px 0;
+  min-width: 0;
+}
+.suggestion-field span {
+  font-size: 8px;
+}
+.suggestion-field input {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+  padding: 9px;
+  background: #f7f7ee;
+  border: 1px solid #c8d1bc;
+  border-radius: 3px;
+  color: var(--ink);
+}
+.suggestion-budgets {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 12px;
+}
+.suggestion-budgets .suggestion-field {
+  margin-top: 0;
+}
+.suggestion-body form > button {
+  width: 100%;
+  margin-bottom: 14px;
+  font-size: 10px;
+}
+.suggestion-result {
+  border-top: 1px solid #cdd4c1;
+  margin-top: 14px;
+  padding-top: 15px;
+}
+.suggestion-measure {
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.suggestion-records {
+  padding: 0 0 0 18px;
+  margin: 19px 0;
+  display: grid;
+  gap: 13px;
+}
+.suggestion-records li {
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.suggestion-records small {
+  display: block;
+  font-size: 9px;
+  color: #5f6d5c;
+  margin-top: 4px;
+}
+.suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 13px;
+}
+.suggestion-actions .secondary {
+  padding: 9px 11px;
+  font-size: 10px;
+}
+.suggestion-actions .text-button {
+  font-size: 10px;
+}
+.brief-size-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  color: #5f6d5c;
+}
+.brief-estimate {
+  font-size: 9px;
+  color: #5f6d5c;
+  margin: -4px 0 13px;
+  line-height: 1.7;
+}
+@media (max-width: 900px) {
+  .suggestions {
+    max-width: 520px;
+  }
+  .brief-content {
+    max-height: 560px;
+  }
+}

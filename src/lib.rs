@@ -1,4 +1,5 @@
 //! Local, explicit project memory for MCP clients.
+#![forbid(unsafe_code)]
 pub mod error;
 mod export;
 pub mod input;

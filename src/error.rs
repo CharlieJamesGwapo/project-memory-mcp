@@ -10,6 +10,16 @@ pub enum MemoryError {
     Conflict,
     #[error("Cursor is invalid or belongs to a different query")]
     InvalidCursor,
+    #[error("Database is open read-only; this operation cannot change records")]
+    ReadOnly,
+    #[error(
+        "Complete selection or project metadata exceeds max_bytes; increase the budget or select fewer records"
+    )]
+    BudgetExceeded,
+    #[error(
+        "Database integrity check failed; restore a trusted backup or inspect a copy with SQLite tools"
+    )]
+    Integrity,
     #[error("Database operation failed; check the configured database and file permissions")]
     Storage(#[from] rusqlite::Error),
     #[error("Cannot access the configured database file")]
@@ -29,6 +39,9 @@ impl MemoryError {
             Self::NotFound => "NOT_FOUND",
             Self::Conflict => "CONFLICT",
             Self::InvalidCursor => "INVALID_CURSOR",
+            Self::ReadOnly => "READ_ONLY",
+            Self::BudgetExceeded => "BUDGET_EXCEEDED",
+            Self::Integrity => "INTEGRITY_ERROR",
             Self::Storage(_) | Self::Io(_) => "STORAGE_ERROR",
             Self::NewerSchema => "NEWER_SCHEMA",
             Self::ForeignDatabase => "FOREIGN_DATABASE",

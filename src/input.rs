@@ -90,6 +90,48 @@ pub struct Search {
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct SearchMemory {
+    pub project_id: String,
+    /// Literal text in note, decision or handoff fields; max 2000 characters.
+    pub query: String,
+    #[serde(default)]
+    pub kind: Option<RecordKind>,
+    #[serde(default)]
+    pub include_superseded: bool,
+    #[serde(default = "default_limit")]
+    pub limit: u32,
+    #[serde(default)]
+    pub cursor: Option<String>,
+}
+
+fn default_bundle_bytes() -> usize {
+    16000
+}
+
+fn default_bundle_records() -> usize {
+    8
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ContextBundle {
+    pub project_id: String,
+    /// Optional literal search of current record text, mutually exclusive with record_ids.
+    #[serde(default)]
+    pub query: Option<String>,
+    /// Explicit, atomic selection of 1–20 unique record UUIDs in requested order.
+    #[serde(default)]
+    pub record_ids: Option<Vec<String>>,
+    /// Full serialized MCP tool result budget, including JSON text fallback: 4096–65536 bytes.
+    #[serde(default = "default_bundle_bytes")]
+    pub max_bytes: usize,
+    /// Whole records only: 1–20, default 8.
+    #[serde(default = "default_bundle_records")]
+    pub max_records: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct Decision {
     pub project_id: String,
     pub decision: String,

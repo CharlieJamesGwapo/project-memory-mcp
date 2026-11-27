@@ -21,7 +21,12 @@ fn publication_metadata_matches_the_crate_and_skills_are_distributed() {
     assert_eq!(registry["packages"][0]["transport"]["type"], "stdio");
     let readme = std::fs::read_to_string(root.join("README.md")).unwrap();
     assert!(readme.contains("mcp-name: io.github.CharlieJamesGwapo/project-memory"));
-    for skill in ["resume-project", "record-decision", "prepare-handoff"] {
+    for skill in [
+        "project-memory",
+        "resume-project",
+        "record-decision",
+        "prepare-handoff",
+    ] {
         assert!(root.join("skills").join(skill).join("SKILL.md").is_file());
     }
     assert!(root.join("LICENSE").is_file());

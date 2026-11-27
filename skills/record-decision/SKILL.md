@@ -17,6 +17,11 @@ If the MCP connection is unavailable, provide a draft and say it is unsaved.
 
 For a change to an existing choice, read the active decision previews from
 `get_project_context`, then retrieve relevant full records with `get_record`.
+If available, `search_memory` with `kind: "decision"` can locate literal matches;
+its results remain previews. `get_context_bundle` can retrieve complete known
+records, so those records need no duplicate fetch. Read the bundled
+[retrieval contract](../project-memory/references/token-saver.md) when using
+these optional tools; retain the existing read-tool fallback on older servers.
 Follow history cursors when needed. A matching keyword does not prove that two
 decisions address the same subject.
 

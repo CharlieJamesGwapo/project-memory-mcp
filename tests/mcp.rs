@@ -16,12 +16,12 @@ async fn client(path: &Path) -> rmcp::service::RunningService<rmcp::RoleClient, 
 }
 
 #[tokio::test]
-async fn real_client_discovers_ten_tools_calls_them_and_reconnects() {
+async fn real_client_discovers_twelve_tools_calls_them_and_reconnects() {
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("memory with spaces.sqlite");
     let first = client(&path).await;
     let tools = first.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 10);
+    assert_eq!(tools.len(), 12);
     for name in [
         "create_project",
         "list_projects",
@@ -33,6 +33,8 @@ async fn real_client_discovers_ten_tools_calls_them_and_reconnects() {
         "save_handoff",
         "export_project",
         "delete_project",
+        "search_memory",
+        "get_context_bundle",
     ] {
         assert!(tools.iter().any(|t| t.name == name));
     }
@@ -111,6 +113,124 @@ async fn real_client_discovers_ten_tools_calls_them_and_reconnects() {
         "A saved note"
     );
     second.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn readonly_client_exposes_only_read_tools_and_rejects_direct_mutation_calls() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("readonly.sqlite");
+    let mut store = project_memory_mcp::store::Store::open(&path).unwrap();
+    let project = store
+        .execute(
+            "create_project",
+            json!({"name":"Readonly","purpose":"Safe retrieval"}),
+        )
+        .unwrap();
+    drop(store);
+    let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_project-memory-mcp"));
+    command.arg("--db").arg(&path).arg("--read-only");
+    let reader = ().serve(TokioChildProcess::new(command).unwrap()).await.unwrap();
+    let tools = reader.list_all_tools().await.unwrap();
+    assert_eq!(tools.len(), 7);
+    assert!(
+        tools
+            .iter()
+            .all(|tool| tool.annotations.as_ref().unwrap().read_only_hint == Some(true))
+    );
+    for operation in [
+        "create_project",
+        "save_note",
+        "record_decision",
+        "save_handoff",
+        "delete_project",
+    ] {
+        assert!(!tools.iter().any(|tool| tool.name == operation));
+        let result=reader.call_tool(CallToolRequestParams::new(operation).with_arguments(json!({"project_id":project["id"],"name":"Should never exist","purpose":"Blocked","confirm":true}).as_object().unwrap().clone())).await;
+        assert!(
+            result.is_err() || result.is_ok_and(|r| r.is_error == Some(true)),
+            "{operation} must be inaccessible"
+        );
+    }
+    let bundle = reader
+        .call_tool(
+            CallToolRequestParams::new("get_context_bundle").with_arguments(
+                json!({"project_id":project["id"]})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+    assert_ne!(bundle.is_error, Some(true));
+    reader.cancel().await.unwrap();
+    let diagnostics = project_memory_mcp::store::Store::open_read_only(&path)
+        .unwrap()
+        .diagnostics()
+        .unwrap();
+    assert_eq!(diagnostics["project_count"], 1);
+    assert_eq!(diagnostics["record_count"], 0);
+}
+
+#[tokio::test]
+async fn context_bundle_budget_matches_real_mcp_result_with_json_text_fallback() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("bundle.sqlite");
+    let mut store = project_memory_mcp::store::Store::open(&path).unwrap();
+    let project = store
+        .execute(
+            "create_project",
+            json!({"name":"Wire budget","purpose":"Quoted text"}),
+        )
+        .unwrap();
+    let small=store.execute("save_note",json!({"project_id":project["id"],"title":"Small","content":"complete safe note","author_type":"assistant"})).unwrap();
+    store.execute("save_note",json!({"project_id":project["id"],"title":"Large","content":"\"\\\n😀".repeat(3000),"author_type":"assistant"})).unwrap();
+    drop(store);
+    let client = client(&path).await;
+    let result = client
+        .call_tool(
+            CallToolRequestParams::new("get_context_bundle").with_arguments(
+                json!({"project_id":project["id"],"max_bytes":4096})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+    assert_ne!(result.is_error, Some(true));
+    let actual = serde_json::to_vec(&result).unwrap().len();
+    let value = result.structured_content.as_ref().unwrap();
+    assert!(actual <= 4096);
+    let canonical_size =
+        serde_json::to_vec(&rmcp::model::CallToolResult::structured(value.clone()))
+            .unwrap()
+            .len();
+    assert_eq!(value["budget"]["used_bytes"], canonical_size);
+    // rmcp may omit resultType for legacy peers; canonical accounting stays
+    // exact for the server result and conservatively bounds that smaller wire result.
+    assert!(actual <= canonical_size);
+    assert_eq!(value["records"][0]["id"], small["id"]);
+    assert_eq!(value["selection"]["omitted_by_budget"], 1);
+    assert_eq!(result.content.len(), 1);
+    let fallback: Value = serde_json::from_str(&result.content[0].as_text().unwrap().text).unwrap();
+    assert_eq!(&fallback, value);
+    let search = client
+        .call_tool(
+            CallToolRequestParams::new("search_memory").with_arguments(
+                json!({"project_id":project["id"],"query":"complete safe"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        search.structured_content.unwrap()["items"][0]["id"],
+        small["id"]
+    );
+    client.cancel().await.unwrap();
 }
 
 #[tokio::test]

@@ -23,3 +23,10 @@ pub fn export_size(value: &Value) -> usize {
         .expect("JSON tool result is serializable")
         .len()
 }
+
+/// Ordinary structured results include a serialized JSON text compatibility copy.
+pub fn structured_size(value: &Value) -> usize {
+    serde_json::to_vec(&CallToolResult::structured(value.clone()))
+        .expect("JSON tool result is serializable")
+        .len()
+}

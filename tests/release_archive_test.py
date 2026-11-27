@@ -41,6 +41,9 @@ class ReleaseArchiveTest(unittest.TestCase):
                 exe = next(name for name in source.namelist() if name.endswith("/project-memory-mcp.exe"))
                 self.assertEqual(source.read(exe), b"MZsynthetic")
                 self.assertTrue(any(name.endswith("/skills/prepare-handoff/SKILL.md") for name in source.namelist()))
+                names = source.namelist()
+                for required in ("skills/project-memory/references/code-review.md", "scripts/install-skills.py", "scripts/backup-memory.py", "docs/architecture.md", "docs/api-reference.md", "CHANGELOG.md"):
+                    self.assertTrue(any(name.endswith("/"+required) for name in names), required)
 
 
 if __name__ == "__main__":

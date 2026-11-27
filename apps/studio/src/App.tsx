@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { version as appVersion } from "../package.json";
 import type { FormEvent, KeyboardEvent, ReactNode } from "react";
 import {
   addToContext,
@@ -8,6 +9,8 @@ import {
 } from "./context";
 import { isStaleSession } from "./adapter";
 import { createSampleAdapter } from "./sample";
+import SearchMemory from "./SearchMemory";
+import ContextSuggestions from "./ContextSuggestions";
 import { Brand, Icon } from "./icons";
 import type { IconName } from "./icons";
 import type {
@@ -19,12 +22,13 @@ import type {
   Project,
   ProjectContext,
 } from "./types";
-type Tab = "overview" | "notes" | "decisions" | "handoffs";
+type Tab = "overview" | "notes" | "decisions" | "handoffs" | "search";
 const tabs: { key: Tab; name: string; icon: IconName }[] = [
   { key: "overview", name: "Overview", icon: "overview" },
   { key: "notes", name: "Notes", icon: "note" },
   { key: "decisions", name: "Decisions", icon: "clock" },
   { key: "handoffs", name: "Handoffs", icon: "stack" },
+  { key: "search", name: "Search", icon: "search" },
 ];
 function shortDate(date: string | null): string {
   if (!date) return "No activity yet";
@@ -485,6 +489,10 @@ export default function App({
   const requestView = useCallback(
     async (nextCursor: string | null = null) => {
       if (!project || !connection?.session_id) return;
+      if (tab === "search") {
+        setLoading(false);
+        return;
+      }
       const request = ++viewEpoch.current;
       const scope = epoch.current;
       setLoading(true);
@@ -694,6 +702,27 @@ export default function App({
           ? error.message
           : "This record could not be added.",
       );
+    }
+  }
+  function applySuggestions(
+    records: MemoryRecord[],
+    mode: "add" | "replace",
+  ): string | null {
+    if (!project || exporting || choosing)
+      return "Wait for the current action before changing your brief.";
+    try {
+      const next = records.reduce(
+        (selection, record) => addToContext(project, selection, record),
+        mode === "replace" ? [] : selected,
+      );
+      setSelected(next);
+      setMessage("");
+      setMessageError(false);
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : "These records could not be added. Your brief is unchanged.";
     }
   }
   const markdown = useMemo(
@@ -926,7 +955,7 @@ export default function App({
         </div>
         <div className="sidebar-bottom">
           <span>Read-only by design</span>
-          <span>v0.1</span>
+          <span>v{appVersion}</span>
         </div>
       </aside>
       <main className="workspace">
@@ -990,7 +1019,7 @@ export default function App({
                 >
                   <Icon name={item.icon} size={13} />
                   {item.name}
-                  {item.key !== "overview" ? (
+                  {item.key !== "overview" && item.key !== "search" ? (
                     <span className="tab-count">
                       {item.key === "notes"
                         ? project.note_count
@@ -1153,6 +1182,15 @@ export default function App({
                     </div>
                   </>
                 ) : null
+              ) : tab === "search" ? (
+                <SearchMemory
+                  key={`${connection.session_id}:${project.id}`}
+                  adapter={adapter}
+                  session={connection.session_id!}
+                  project={project}
+                  onOpen={(record) => void openRecord(record)}
+                  onStale={handleStale}
+                />
               ) : (
                 <div className="content-panel">
                   <div className="list-toolbar">
@@ -1306,6 +1344,17 @@ export default function App({
           with their sources intact.
         </p>
         <div className="brief-content">
+          {project && connection.session_id ? (
+            <ContextSuggestions
+              key={`${connection.session_id}:${project.id}`}
+              adapter={adapter}
+              session={connection.session_id}
+              project={project}
+              disabled={exporting || choosing}
+              onApply={applySuggestions}
+              onStale={handleStale}
+            />
+          ) : null}
           {selected.length ? (
             selected.map((record) => (
               <div className="brief-card" key={record.id}>
@@ -1345,6 +1394,7 @@ export default function App({
           )}
         </div>
         <div className="brief-foot">
+          <p className="brief-size-label">Final Markdown</p>
           <div className="brief-limit">
             <span>
               {selected.length} / {MAX_RECORDS} records
@@ -1354,6 +1404,10 @@ export default function App({
               / 2 MiB
             </span>
           </div>
+          <p className="brief-estimate">
+            Markdown estimate: {Math.ceil(bytes / 4).toLocaleString("en")}{" "}
+            tokens (bytes / 4, rounded up; heuristic, not model usage).
+          </p>
           <button
             className="primary"
             disabled={!selected.length || exporting}

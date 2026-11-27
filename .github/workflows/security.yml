@@ -1,0 +1,60 @@
+name: Security policy and advisories
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+permissions:
+  contents: read
+jobs:
+  source-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+      - name: Check redacted source policy and executable-install boundaries
+        run: python scripts/check-source-safety.py
+      - name: Verify skills and documentation
+        run: |
+          python scripts/check-skills.py
+          python scripts/check-docs.py
+      - name: Exercise security policy and packaging rejection paths
+        run: python -m unittest discover -s tests -p '*_test.py'
+  rust-advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install fixed audit tool
+        run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Fetch and identify current official RustSec data
+        run: |
+          git clone --depth 1 https://github.com/RustSec/advisory-db.git /tmp/project-memory-rustsec
+          git -C /tmp/project-memory-rustsec rev-parse HEAD
+          cargo audit --version
+      - name: Check core dependencies
+        run: cargo audit --db /tmp/project-memory-rustsec --no-fetch --no-yanked --file Cargo.lock
+      - name: Check native Studio dependencies
+        if: ${{ !cancelled() }}
+        run: cargo audit --db /tmp/project-memory-rustsec --no-fetch --no-yanked --file apps/studio/src-tauri/Cargo.lock
+      # All known vulnerabilities fail the job. Unmaintained/unsound warnings
+      # remain visible for review. --no-yanked avoids a second registry fetch;
+      # this job checks advisories, not whether a release was yanked.
+  npm-advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '26'
+      - name: Audit the Studio lock without running install scripts
+        working-directory: apps/studio
+        run: npm audit --package-lock-only --ignore-scripts --audit-level=low

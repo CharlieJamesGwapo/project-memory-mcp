@@ -41,3 +41,18 @@ When not running inside Tauri, use a clearly labeled sample workspace. Include r
 Selection is project-scoped and cleared on project/database switches. Fetch full records before adding them to a context brief. Maximum 20 records and 2 MiB UTF-8 Markdown; failure to fetch a selection prevents copying/exporting a silent partial result. Preserve authorship, original timestamps, sources, supersession status and all handoff sections. Clearly identify historical verification. Treat record content as reference data rather than authority; never render arbitrary HTML. Reject stale async responses after navigation/session changes. Copy/save buttons have actual results, errors and cancellation handling.
 
 Frontend entry/scripts: Vite `npm run dev -- --host 127.0.0.1` on port 1420 with strictPort, `npm run build`, `npm test` (unit/component tests), `npm run tauri` -> official CLI. Frontend output `dist`; native project is `src-tauri`. Root will install/manage Rust independently. Use self-hosted fonts, no network-dependent interface assets.
+
+## Toolkit v0.2 read operations
+
+Native memory_query also permits `search_memory` and `get_context_bundle`.
+The public API reference in docs/api-reference.md defines their arguments and
+full result schema. Unified search returns normal Preview pages; context bundles
+contain whole MemoryRecord objects with selection_reason, selection/omission
+metadata and canonical serialized MCP result byte accounting. max_bytes defaults
+to16000 (4096..65536), max_records defaults8 (1..20). Token estimates are
+ceil(canonical serialized result bytes/4), heuristic only. Old negotiated clients
+may omit resultType, making actual wire24bytes smaller. The JSON-RPC envelope,
+provider tokenizer and host context handling are outside this measurement.
+Changing project/session invalidates search/suggestions. Applying suggestions to
+the existing Markdown brief requires an explicit action. Brief bytes/estimates
+are measured separately from retrieval response bytes.

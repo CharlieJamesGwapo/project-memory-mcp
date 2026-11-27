@@ -2,7 +2,7 @@
 
 Studio is the desktop companion to Project Memory MCP. It browses the same local
 SQLite archive and helps you assemble a context brief for your next AI session.
-The MCP server and three skills continue to create notes, decisions and handoffs;
+The MCP server and workflow pack continue to create notes, decisions and handoffs;
 Studio opens existing archives with a read-only SQLite connection.
 
 ## Use it
@@ -35,7 +35,7 @@ the related development packages listed by Tauri.
 
 ```sh
 cd apps/studio
-npm ci
+npm ci --ignore-scripts
 npm test
 npm run tauri -- dev
 ```
@@ -75,3 +75,21 @@ The initial local macOS build has an ad-hoc executable signature and has no
 Developer ID signature or notarization. Public signed desktop distribution is
 separate from the existing MCP release and Registry listing.
 The Studio source does not change the released MCP v0.1.0 artifacts.
+
+## Toolkit retrieval
+
+The Search tab searches literal text across notes, decision rationale and all
+handoff sections. Filter by record kind or include superseded decisions when
+reviewing history. Open a result for its full record.
+
+The optional **Suggest context** section retrieves whole records for a literal
+task phrase or the recent handoff/active decisions/notes. It reports the byte
+budget, heuristic token estimate and omissions. Review suggestions before using
+**Add suggestions** or **Replace brief**. These are explicit actions; retrieval
+does not silently change your manual selection.
+
+Retrieval bytes count the canonical MCP response. Final Markdown bytes and its
+heuristic estimate are separate. Neither is a provider billing measurement.
+See [the API reference](api-reference.md) for limits and measurement details.
+Read-only SQLite can create/update WAL/SHM coordination files in the archive
+folder while preventing memory/schema writes. See [troubleshooting](troubleshooting.md).

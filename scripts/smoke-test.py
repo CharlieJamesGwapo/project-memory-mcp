@@ -85,7 +85,7 @@ def smoke(binary):
         try:
             client.initialize()
             tools = client.request("tools/list", {})["tools"]
-            assert len(tools) == 10
+            assert len(tools) == 12
             a = client.tool("create_project", {"name": "Atlas", "purpose": "Synthetic MCP test"})["id"]
             b = client.tool("create_project", {"name": "Atlas", "purpose": "Separate synthetic project"})["id"]
             assert len(client.tool("list_projects", {})["items"]) == 2
@@ -98,6 +98,13 @@ def smoke(binary):
             client.tool("save_handoff", {"project_id": a, "summary": "Smoke test", "completed": ["Saved synthetic records"], "unfinished": [], "next_actions": ["Review output"], "blockers": [], "verification": ["This temporary MCP call succeeded"], "author_type": "assistant", "sources": []})
             context = client.tool("get_project_context", {"project_id": a})
             assert context["active_decisions"]["items"][0]["id"] == current["id"]
+            unified = client.tool("search_memory", {"project_id": a, "query": "Structured local data"})
+            assert unified["items"][0]["id"] == current["id"]
+            bundle = client.tool("get_context_bundle", {"project_id": a, "record_ids": [note["id"], current["id"]], "max_bytes": 16000})
+            assert [record["id"] for record in bundle["records"]] == [note["id"], current["id"]]
+            assert bundle["records"][0]["content"] == "100%_complete 日本語"
+            assert bundle["budget"]["used_bytes"] <= 16000
+            assert bundle["selection"]["selection_complete"] is True
             export = client.tool("export_project", {"project_id": a})
             assert "superseded_by" in export["markdown"]
             assert len(export["record_ids"]) == 4
@@ -113,7 +120,7 @@ def smoke(binary):
             assert len(projects) == 1 and projects[0]["id"] == b
         finally:
             client.close()
-    print("Black-box MCP smoke passed: 10 tools, literal Unicode search, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
+    print("Black-box MCP smoke passed: 12 tools, unified literal search, budgeted full records, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
 
 
 if __name__ == "__main__":

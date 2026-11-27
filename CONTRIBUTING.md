@@ -1,5 +1,9 @@
 # Contributing
 
+Read [architecture](docs/architecture.md), [API contracts](docs/api-reference.md)
+and [AGENTS.md](AGENTS.md) for the cross-layer invariants. Keep changes focused
+and describe the behavior, evidence and relevant limits in a pull request.
+
 Use Rust 1.100.0 and keep Cargo.lock committed. Before proposing a change, run
 `cargo fmt --all -- --check`, `cargo clippy --locked --all-targets -- -D warnings`,
 and `cargo test --locked`.
@@ -11,8 +15,48 @@ history, bounded outputs, and the distinction between a source reference and
 verified evidence.
 
 Update tool documentation and skills when changing their input contracts.
-Changes to Cargo version or package identity must also update server.json and
-release instructions. Package inventory checks must pass before publishing.
+Changes to Cargo version or package identity must also update server.json,
+native/npm versions and release instructions. Regenerate locks with the intended
+toolchain. `server.mcpb.json` describes an actually published bundle; never invent
+its hash or overwrite an existing versioned release asset.
+
+Run helper, skill, documentation and security checks too:
+
+```sh
+python3 scripts/check-skills.py
+python3 scripts/check-docs.py
+python3 scripts/check-source-safety.py
+python3 -m unittest discover -s tests -p '*_test.py'
+cargo package --locked
+```
+
+Verify the generated archive with `scripts/check-package.py`. Its path includes
+the current Cargo version; use that version rather than copying an old filename.
+Source-policy checks require a Git checkout. Do not commit archives, databases,
+tokens, environment files, node_modules or target directories.
+
+For Studio, install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)
+and Node 26, then:
+
+```sh
+cd apps/studio
+npm ci --ignore-scripts
+npm test
+npm run build
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --locked --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol --all-targets -- -D warnings
+cargo test --locked --manifest-path src-tauri/Cargo.toml --features tauri/custom-protocol
+```
+
+Build the frontend serially before native asset embedding. Do not run another
+Vite production build while Tauri compiles its embedded assets. Test actual
+native dialogs and data against a temporary synthetic database. Browser sample
+success alone does not prove native IPC or another OS works.
+
+New skill instructions need structural validation and realistic forward checks.
+Evaluate unavailable host tools, untrusted memory, stale verification and budget
+omissions. Keep model/tool claims tied to actual evidence; avoid fixed savings
+or blanket security promises. See [security evidence](docs/security.md).
 
 Open a GitHub issue or pull request after the repository is published. See
 SECURITY.md for vulnerability reporting.

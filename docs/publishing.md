@@ -1,160 +1,90 @@
-# Publish Project Memory MCP
+# Publish a versioned release
 
-Building and testing do not publish anything. Native release bundles can be
-hosted on GitHub and listed in the MCP Registry without a crates.io account or
-paid hosting. The current native route uses `server.mcpb.json`; `server.json`
-remains the optional Cargo publishing template. Do not paste tokens into chats
-or commit them.
+Native GitHub downloads and MCPB can be listed in the official MCP Registry
+without crates.io publication or a hosted service. This repository already
+exists at CharlieJamesGwapo/project-memory-mcp. Never create a duplicate or
+overwrite assets referenced by an existing Registry version.
 
-## GitHub-hosted native bundle route
+## Release gate
 
-Run the release build workflow and require all four native builds to pass.
-Then dispatch `Publish native release` with that successful build run's ID.
-It verifies the producing workflow and matching Rust source, downloads/checksums
-the artifacts, assembles and smoke-tests the MCPB, regenerates native archives
-with current documentation, and creates the GitHub Release. The following
-commands describe the equivalent manual assembly:
-Download and checksum-check its native archives. Combine both macOS executables
-with `lipo -create` into a universal binary, then stage the universal macOS,
-Linux x64, and Windows x64 binaries with `scripts/package-mcpb.py`.
+Use the intended commit with consistent root/native/npm versions, Cargo locks,
+`server.json`, user docs, skills and `docs/releases/VERSION.md`. Run core,
+frontend, native, helper, archive, advisory and documentation checks. Review the
+actual platform/runtime evidence and unresolved upstream warnings. Inspect the
+tracked inventory for credentials, databases and generated caches.
 
-Validate and pack the staging directory with the pinned official CLI:
+`server.json` is the optional Cargo publishing template and identity source.
+`server.mcpb.json` describes an actually published MCPB. Generate its download
+URL and SHA-256 from the final built artifact; do not invent a future hash.
 
-```sh
-npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb validate /path/to/staging/manifest.json
-npm exec --yes --package=@anthropic-ai/mcpb@2.1.2 -- mcpb pack /path/to/staging /path/to/project-memory-mcp-0.1.0.mcpb
-```
+## GitHub workflow sequence
 
-Unpack the actual MCPB and smoke-test its native binary. Upload it and the native
-archives to the versioned GitHub Release. Record its actual SHA-256 and immutable
-download URL in `server.mcpb.json`, then validate using the official publisher.
-Do not replace an asset referenced by an existing Registry version.
+1. Push the verified source commit. Require CI, Studio and Security checks to
+   pass. A source review is separate from a successful compile or audit.
+2. Dispatch **Prepare release binaries** from that commit/ref. It tests/builds
+   Linux x64, macOS arm64, macOS Intel and Windows x64, then archives binaries,
+   docs, all skills and user helper scripts. Require all four jobs to pass.
+3. Dispatch **Publish native release** from the same intended release commit,
+   passing the successful preparation run ID. It verifies the producing workflow,
+   repository, ancestry and unchanged Rust source/locks before using artifacts.
+   The read-only preparation job assembles a universal macOS server, stages and
+   validates the MCPB, unpacks/smoke-tests the actual result, and generates exact
+   Registry metadata and checksums. It also builds the macOS arm64 Studio preview.
+4. A separate job attests exact release assets using GitHub build provenance.
+   The final publishing job verifies the MCPB attestation and creates a new
+   versioned GitHub Release with narrow repository-write permission. It never
+   replaces an existing release.
+5. Download the published files, compare their hashes and inspect metadata.
+   Verify the artifact attestation against the repository, signer workflow and
+   exact release source digest. Check the public bundle URL before listing it.
+6. Dispatch **Publish MCP Registry listing** at the exact same release commit or
+   its tag. The preparation job verifies matching metadata, bundle hash and
+   attestation, and validates a Sigstore-verified pinned publisher. The final
+   job uses GitHub OIDC identity to publish without a stored personal token.
 
-The manual `Publish MCP Registry listing` GitHub workflow downloads the exact
-metadata asset from the matching versioned GitHub Release, validates it,
-verifies a pinned official publisher download with Sigstore, authenticates using
-GitHub Actions OIDC, and publishes the listing. It needs no stored personal
-access token or crates.io credentials. Invoke it only after the referenced release
-asset is public and verified. Its permissions are repository read plus identity
-token issuance; it cannot modify repository contents.
+The Registry workflow intentionally requires new-release provenance. It is not
+an instruction to republish the older, unattested v0.1 assets. Namespace case
+matters: `io.github.CharlieJamesGwapo/project-memory`.
 
-Namespace spelling is significant: this repository's OIDC owner is
-`CharlieJamesGwapo`, so use `io.github.CharlieJamesGwapo/project-memory`.
-Do not lowercase the owner when generating listing metadata.
+The desktop app is optional and distinct from the Registry server package.
+The initial Studio download covers macOS arm64 with an ad-hoc signature, no
+Developer ID identity or notarization. Other desktop platforms need separate
+runtime/distribution review. See [security evidence](security.md).
 
-## 1. Publish the GitHub repository
+## Inspect MCPB locally
 
-The intended owner is CharlieJamesGwapo. First check whether
-`CharlieJamesGwapo/project-memory-mcp` already exists and whether it is the
-repository you intend to update. These commands are for a new repository only:
+MCPB is a ZIP containing root `manifest.json` and the server assets. This project
+uses Python 3.11+ standard-library packing, eliminating the former npm MCPB build
+dependency chain. The validator checks this repository's generated contract;
+it is not a general validator for third-party bundles.
 
-```sh
-gh auth status
-gh repo create CharlieJamesGwapo/project-memory-mcp --public --source=. --remote=origin
-git push -u origin HEAD:main
-gh repo edit CharlieJamesGwapo/project-memory-mcp --default-branch main
-```
-
-The GitHub CLI may ask for authentication or confirm account permissions.
-Review `git status` and the tracked files before pushing. The source ZIP omits
-Git metadata; if starting from that ZIP, first initialize a repository, add its
-source files, and make an initial commit. Never add your memory database.
-
-## 2. Verify the release
-
-Run formatting, Clippy and tests, then package:
+After obtaining/checking real platform binaries and making a universal macOS
+server with `lipo -create`:
 
 ```sh
-cargo fmt --all -- --check
-cargo clippy --locked --all-targets -- -D warnings
-cargo test --locked
-cargo package --locked
-python3 scripts/check-package.py target/package/project-memory-mcp-0.1.0.crate
+python3 scripts/package-mcpb.py --macos-universal /path/mac-universal --linux-x64 /path/linux-x64 --windows-x64 /path/windows-x64.exe --output-dir /path/staging
+python3 scripts/package-mcpb.py --validate /path/staging
+python3 scripts/package-mcpb.py --pack /path/staging --archive /path/project-memory.mcpb
+python3 scripts/package-mcpb.py --unpack /path/project-memory.mcpb --output-dir /path/unpacked
+python3 scripts/smoke-test.py /path/unpacked/server/darwin/project-memory-mcp
 ```
 
-The helper requires Python 3.11 or newer and only reads the archive. Review the
-crate inventory and licenses. Test the actual release binary with an MCP client
-outside the source directory and use a temporary synthetic database.
+Use the executable for your current OS for the smoke check. The script uses a
+temporary synthetic archive and verifies actual MCP discovery, calls, isolation,
+rejections, persistence and shutdown. Never substitute placeholder binaries in
+a release or treat synthetic archive tests as a real binary smoke result.
 
-## 3. Publish a Cargo package (optional alternative)
+## Optional crates.io route
 
-Check that the crate name `project-memory-mcp` is available or owned by you on
-[crates.io](https://crates.io/). GitHub authentication does not establish Cargo
-publisher ownership. If you need a different name, update Cargo.toml, server.json,
-binary/client examples if the executable changes, and relevant tests/docs.
+Cargo publication is separate. Verify the source archive with
+`scripts/check-package.py`, use the configured account's normal authentication,
+and publish the exact tested version. Do not commit tokens. Only then use a
+`registryType:cargo` listing that points at a real available crate version.
+The native MCPB route works independently of this option.
 
-With your authenticated crates.io account:
+## What provenance establishes
 
-```sh
-cargo login
-cargo publish --dry-run --locked
-cargo publish --locked
-```
-
-The dry run does not reserve the name or prove publisher permission. Confirm
-the actual public package and version after publication. Only then can users
-install the public crate with `cargo install project-memory-mcp --locked`.
-Until then, use `cargo install --path . --locked` from the source checkout.
-
-## 4. List the server in the MCP Registry
-
-Follow the official [publishing guide](https://modelcontextprotocol.io/registry/quickstart)
-and [Cargo requirements](https://modelcontextprotocol.io/registry/package-types).
-The Registry hosts installation metadata, not executables or saved memories.
-Cargo users install once, then their MCP client invokes the binary by name;
-there is no Cargo equivalent of an npx runtime runner.
-
-The visible README token is required for Cargo ownership verification:
-
-`mcp-name: io.github.CharlieJamesGwapo/project-memory`
-
-It must match `name` in server.json. Keep it visible: crates.io strips HTML
-comments when rendering README content. Package name and version must match
-the already-published crate. The checked-in server.json is a publishing template;
-its namespace and proposed package identity still require live verification.
-
-For the GitHub-native route, use the manual GitHub Actions workflow or a current
-official mcp-publisher CLI with `server.mcpb.json`. The Cargo route uses
-`server.json` only after the Cargo package has actually been published:
-
-```sh
-mcp-publisher validate server.mcpb.json
-mcp-publisher login github
-mcp-publisher publish server.mcpb.json
-```
-
-Check `mcp-publisher --help` for the current command arguments. At build time,
-the upstream Registry validator and Cargo documentation supported `cargo`,
-while the public static schema URL returned a schema without that enum value.
-The template was checked against the upstream validator schema. Revalidate
-using the current publisher and live registry before release; the static schema
-alone may lag. Verify GitHub namespace spelling/case with your authenticated
-publisher account rather than assuming a local JSON check proves ownership.
-
-Registry metadata is versioned. Change versions consistently, publish the new
-crate, and then publish its corresponding registry metadata. Verify a live
-listing before claiming the server is discoverable. Some clients use separate
-catalogues; an official Registry listing does not guarantee automatic inclusion
-in every AI application's catalogue.
-
-## 5. Prepare native downloads
-
-Pushing a version tag such as `v0.1.0`, or running the workflow manually, runs
-the release-build workflow for Linux x64, macOS Apple Silicon, macOS Intel and
-Windows x64. It uploads workflow artifacts; it does not create a public GitHub
-Release or publish crates or Registry metadata.
-
-After successful CI, create the GitHub Release and attach the appropriate
-artifacts and checksums. Unix binaries are inside tar.gz files so executable
-permissions survive GitHub's outer artifact ZIP; extract the inner archive before
-running. Windows binaries are inside ZIP files. Signing/notarization is not configured. This local build
-only verifies the current machine's platform; other platforms require successful
-CI before their binaries should be advertised as tested.
-
-## Costs
-
-Public GitHub source and public crates.io distribution can be used without a
-paid hosting service. Standard GitHub-hosted runners are free for public
-repositories, subject to GitHub's current terms. The Registry publishing guide
-documents no listing fee. Each user runs the binary on their own computer.
-AI client subscriptions or model usage are separate from this server.
+Checksums identify the downloaded bytes. GitHub attestation links them to the
+repository workflow/source digest. Sigstore verifies the publisher download's
+identity. None establishes malware absence or substitutes for source/dependency
+review, OS signing or the client's authorization rules.

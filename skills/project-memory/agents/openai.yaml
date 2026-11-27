@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Memory"
+  short_description: "Budgeted context, reviews, and coordinated work"
+  default_prompt: "Use $project-memory to continue this project with the workflow needed for my request."

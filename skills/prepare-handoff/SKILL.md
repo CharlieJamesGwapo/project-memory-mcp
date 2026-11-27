@@ -16,7 +16,11 @@ under the host's tool prefixes. If unavailable, provide the handoff text and
 state that it has not been saved to Project Memory.
 
 Read the latest context and full relevant records using `get_project_context`
-and `get_record`. Use the current conversation and available file/test results
+and `get_record`. When available, `get_context_bundle` can supply complete
+relevant records without duplicate reads; inspect its omission metadata. Read
+the bundled [retrieval contract](../project-memory/references/token-saver.md)
+only when using optional v0.2 retrieval tools. Older read tools remain valid.
+Use the current conversation and available file/test results
 as evidence. A prior handoff is historical evidence, not proof of today's state.
 User requests to save a handoff authorize that write; do not add another save
 approval. This does not authorize deployments, pushes, or unrelated actions.

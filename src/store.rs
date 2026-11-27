@@ -9,10 +9,12 @@ use rusqlite::{
 use serde_json::{Value, json};
 use std::{fs, path::Path, time::Duration};
 
+mod retrieval;
 mod studio;
 
 pub struct Store {
     conn: Connection,
+    read_only: bool,
 }
 struct RecordRow {
     seq: i64,
@@ -26,6 +28,35 @@ fn timestamp() -> String {
 }
 
 impl Store {
+    /// Inspect database identity, consistency and counts without returning record contents.
+    pub fn diagnostics(&self) -> Result<Value> {
+        let application: i64 = self
+            .conn
+            .query_row("PRAGMA application_id", [], |r| r.get(0))?;
+        let version: i64 = self
+            .conn
+            .query_row("PRAGMA user_version", [], |r| r.get(0))?;
+        let integrity: String = self
+            .conn
+            .query_row("PRAGMA integrity_check(1)", [], |r| r.get(0))?;
+        if integrity != "ok" {
+            return Err(MemoryError::Integrity);
+        }
+        let project_count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM projects", [], |r| r.get(0))?;
+        let record_count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM records", [], |r| r.get(0))?;
+        Ok(
+            json!({"application_id":application,"schema_version":version,"integrity":integrity,"project_count":project_count,"record_count":record_count,"read_only":self.read_only}),
+        )
+    }
+
+    pub fn is_read_only(&self) -> bool {
+        self.read_only
+    }
+
     pub fn memory() -> Result<Self> {
         Self::initialize(Connection::open_in_memory()?)
     }
@@ -60,7 +91,10 @@ impl Store {
             "SELECT seq,id,project_id,kind,data,created_at,supersedes FROM records LIMIT 0",
         )?;
         conn.pragma_update(None, "query_only", true)?;
-        Ok(Self { conn })
+        Ok(Self {
+            conn,
+            read_only: true,
+        })
     }
 
     pub fn open(path: &Path) -> Result<Self> {
@@ -161,7 +195,10 @@ impl Store {
             COMMIT;",
             )?;
         }
-        Ok(Self { conn })
+        Ok(Self {
+            conn,
+            read_only: false,
+        })
     }
 
     /// Executes one validated operation in a transaction. Values are data, not SQL.
@@ -170,6 +207,9 @@ impl Store {
             operation,
             "create_project" | "save_note" | "record_decision" | "save_handoff" | "delete_project"
         );
+        if self.read_only && write {
+            return Err(MemoryError::ReadOnly);
+        }
         self.conn.execute_batch(if write {
             "BEGIN IMMEDIATE"
         } else {
@@ -208,6 +248,8 @@ impl Store {
                 self.save_note(input::parse(args)?)
             }
             "search_notes" => self.search(input::parse(args)?),
+            "search_memory" => self.search_memory(input::parse(args)?),
+            "get_context_bundle" => self.context_bundle(input::parse(args)?),
             "record_decision" => {
                 input::record_size(&args)?;
                 self.save_decision(input::parse(args)?)

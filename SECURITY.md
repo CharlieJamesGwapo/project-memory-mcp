@@ -14,5 +14,11 @@ repository owner has enabled it. Otherwise open a public issue containing only
 a request for a private contact channel; omit exploit details and private data.
 No private reporting address or enabled GitHub reporting feature is assumed.
 
-Only v0.1.x is currently targeted for fixes; there is no support SLA. Please
-include the version, platform, synthetic reproduction, and observed impact.
+The latest published version and the v0.2 development branch are the current
+maintenance targets; there is no support SLA. Include the version, platform,
+synthetic reproduction and observed impact. Do not include secrets or private
+memory content in a public report.
+
+See [the security model and current dependency warnings](docs/security.md) for
+the threat model, actual checks, release provenance and assurance limits.
+See [data safety](docs/data-safety.md) before restoring or deleting records.

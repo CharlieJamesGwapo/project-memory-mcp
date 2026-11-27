@@ -1,4 +1,6 @@
 //! Native Project Memory Studio bridge.
+#![forbid(unsafe_code)]
+
 pub mod service;
 
 use serde::Serialize;
