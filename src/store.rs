@@ -14,11 +14,15 @@ use std::{
 };
 
 mod retrieval;
+mod reviews;
 mod studio;
 
 pub struct Store {
     conn: Connection,
     read_only: bool,
+    policy: crate::security::AccessPolicy,
+    audit: Option<crate::security::AuditLog>,
+    database_path: Option<std::path::PathBuf>,
 }
 struct RecordRow {
     seq: i64,
@@ -120,10 +124,10 @@ impl Store {
         }
         let project_count: i64 = self
             .conn
-            .query_row("SELECT COUNT(*) FROM projects", [], |r| r.get(0))?;
+            .query_row("SELECT COUNT(*) FROM projects WHERE (?1 IS NULL OR id IN (SELECT value FROM json_each(?1)))", [self.policy.projects.as_ref().map(|ids|json!(ids).to_string())], |r| r.get(0))?;
         let record_count: i64 = self
             .conn
-            .query_row("SELECT COUNT(*) FROM records", [], |r| r.get(0))?;
+            .query_row("SELECT COUNT(*) FROM records WHERE (?1 IS NULL OR project_id IN (SELECT value FROM json_each(?1)))", [self.policy.projects.as_ref().map(|ids|json!(ids).to_string())], |r| r.get(0))?;
         Ok(
             json!({"application_id":application,"schema_version":version,"integrity":integrity,"project_count":project_count,"record_count":record_count,"read_only":self.read_only}),
         )
@@ -172,7 +176,10 @@ impl Store {
         conn.pragma_update(None, "query_only", true)?;
         Ok(Self {
             conn,
+            database_path: Some(path.to_path_buf()),
             read_only: true,
+            policy: Default::default(),
+            audit: None,
         })
     }
 
@@ -233,10 +240,12 @@ impl Store {
             startup_timeout(&snapshot, deadline)?;
             snapshot.commit()?;
         }
-        Self::initialize(
+        let mut store = Self::initialize(
             Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE)?,
             deadline,
-        )
+        )?;
+        store.database_path = Some(path.to_path_buf());
+        Ok(store)
     }
 
     fn initialize(mut conn: Connection, deadline: Instant) -> Result<Self> {
@@ -280,41 +289,182 @@ impl Store {
         configure_wal(&conn, deadline)?;
         Ok(Self {
             conn,
+            database_path: None,
             read_only: false,
+            policy: Default::default(),
+            audit: None,
         })
+    }
+
+    /// Prepare the audit destination before SQLite can create or initialize an archive.
+    pub fn open_with_policy(
+        path: &Path,
+        read_only: bool,
+        policy: crate::security::AccessPolicy,
+    ) -> Result<Self> {
+        policy.validate()?;
+        if let Some(audit_path) = &policy.audit_path {
+            crate::security::validate_audit_destination(path, audit_path)?;
+        }
+        let audit = policy
+            .audit_path
+            .as_deref()
+            .map(crate::security::AuditLog::open)
+            .transpose()?;
+        let mut store = if read_only {
+            Self::open_read_only(path)?
+        } else {
+            Self::open(path)?
+        };
+        store.policy = policy;
+        store.audit = audit;
+        Ok(store)
+    }
+
+    /// Apply local configuration, never data supplied through an MCP tool argument.
+    pub fn set_policy(&mut self, policy: crate::security::AccessPolicy) -> Result<()> {
+        policy.validate()?;
+        if let (Some(path), Some(audit_path)) = (&self.database_path, &policy.audit_path) {
+            crate::security::validate_audit_destination(path, audit_path)?;
+        }
+        let audit = policy
+            .audit_path
+            .as_deref()
+            .map(crate::security::AuditLog::open)
+            .transpose()?;
+        self.policy = policy;
+        self.audit = audit;
+        Ok(())
+    }
+
+    pub fn allows_operation(&self, operation: &str) -> bool {
+        self.policy.allows_operation(operation)
+            && (!self.read_only || !crate::security::is_write(operation))
+    }
+
+    pub fn access_policy(&self) -> Value {
+        self.policy.summary(self.read_only)
+    }
+
+    fn audit_event(&mut self, operation: &str, args: &Value, outcome: &str) -> Result<()> {
+        if let Some(audit) = &mut self.audit {
+            let name = if crate::security::OPERATIONS.contains(&operation) {
+                operation
+            } else {
+                "unknown"
+            };
+            let project = args
+                .get("project_id")
+                .and_then(Value::as_str)
+                .filter(|id| input::id(id).is_ok());
+            audit.append(name, project, outcome)?;
+        }
+        Ok(())
     }
 
     /// Executes one validated operation in a transaction. Values are data, not SQL.
     pub fn execute(&mut self, operation: &str, args: Value) -> Result<Value> {
-        let write = matches!(
-            operation,
-            "create_project" | "save_note" | "record_decision" | "save_handoff" | "delete_project"
-        );
+        let write = crate::security::is_write(operation);
         if self.read_only && write {
+            self.audit_event(operation, &args, "read_only")?;
             return Err(MemoryError::ReadOnly);
         }
+        if !self.policy.allows_operation(operation)
+            || args
+                .get("project_id")
+                .and_then(Value::as_str)
+                .is_some_and(|id| !self.policy.allows_project(id))
+        {
+            self.audit_event(operation, &args, "access_denied")?;
+            return Err(MemoryError::AccessDenied);
+        }
+        if write
+            && self.policy.secrets == crate::security::SecretMode::Reject
+            && let Err(error) = crate::security::reject_secrets(&args)
+        {
+            self.audit_event(operation, &args, "secret_rejected")?;
+            return Err(error);
+        }
+        // A durable attempt precedes all operations. A failed preflight audit prevents writes.
+        self.audit_event(operation, &args, "attempt")?;
         self.conn.execute_batch(if write {
             "BEGIN IMMEDIATE"
         } else {
             "BEGIN DEFERRED"
         })?;
-        match self.dispatch(operation, args) {
-            Ok(value) => {
-                if let Err(e) = self.conn.execute_batch("COMMIT") {
+        let result = self.dispatch(operation, args.clone()).and_then(|value| {
+            if operation == "export_project"
+                && self.policy.secrets == crate::security::SecretMode::Reject
+            {
+                crate::security::reject_secrets(&value)?;
+            }
+            Ok(value)
+        });
+        let result = match result {
+            Ok(value) => match self.conn.execute_batch("COMMIT") {
+                Ok(()) => Ok(value),
+                Err(error) => {
                     let _ = self.conn.execute_batch("ROLLBACK");
-                    return Err(e.into());
+                    Err(error.into())
                 }
-                Ok(value)
-            }
-            Err(e) => {
+            },
+            Err(error) => {
                 let _ = self.conn.execute_batch("ROLLBACK");
-                Err(e)
+                Err(error)
             }
+        };
+        let outcome = result
+            .as_ref()
+            .map(|_| "success")
+            .unwrap_or_else(|e| e.code());
+        if self.audit_event(operation, &args, outcome).is_err() {
+            return Err(MemoryError::AuditReceipt);
         }
+        result
+    }
+
+    fn inspect_secrets(&self, args: Value) -> Result<Value> {
+        let p: Context = input::parse(args)?;
+        input::id(&p.project_id)?;
+        input::page(p.limit)?;
+        let project = self.project(&p.project_id)?;
+        let scope = json!(["inspect_secrets", p.project_id]).to_string();
+        let cursor = Cursor::start(&scope, p.cursor.as_deref(), self.high_water("records")?)?;
+        let rows = self.rows(
+            "r.project_id=?",
+            vec![p.project_id.clone().into()],
+            &cursor,
+            p.limit,
+        )?;
+        let items:Vec<_>=rows.iter().take(p.limit as usize).map(|r|json!({"record_id":r.value["id"],"findings":crate::security::inspect(&r.value)})).collect();
+        let next = if rows.len() > p.limit as usize {
+            rows.get(p.limit as usize - 1)
+                .map(|r| cursor.encode_after(r.seq))
+        } else {
+            None
+        };
+        Ok(
+            json!({"project_id":p.project_id,"project_findings":crate::security::inspect(&project),"items":items,"next_cursor":next,"notice":"Narrow credential patterns only; values omitted. Follow next_cursor for all records. A clean report does not establish absence of secrets."}),
+        )
     }
 
     fn dispatch(&mut self, operation: &str, args: Value) -> Result<Value> {
         match operation {
+            "get_access_policy" => {
+                let _: std::collections::BTreeMap<String, Value> = input::parse(args.clone())?;
+                if args != json!({}) {
+                    return Err(MemoryError::Validation(
+                        "get_access_policy takes no arguments".into(),
+                    ));
+                }
+                Ok(self.access_policy())
+            }
+            "inspect_secrets" => self.inspect_secrets(args),
+            "save_review" => {
+                input::record_size(&args)?;
+                self.save_review(input::parse(args)?)
+            }
+            "get_review_history" => self.review_history(input::parse(args)?),
             "create_project" => self.create_project(input::parse(args)?),
             "list_projects" => self.list_projects(input::parse(args)?),
             "studio_list_projects" => self.studio_list_projects(input::parse(args)?),
@@ -364,6 +514,9 @@ impl Store {
 
     fn project(&self, id: &str) -> Result<Value> {
         input::id(id)?;
+        if !self.policy.allows_project(id) {
+            return Err(MemoryError::AccessDenied);
+        }
         self.conn.query_row("SELECT id,name,purpose,directory,created_at FROM projects WHERE id=?1", [id], |r| {
             Ok(json!({"id": r.get::<_,String>(0)?, "name": r.get::<_,String>(1)?, "purpose": r.get::<_,String>(2)?, "directory": r.get::<_,Option<String>>(3)?, "created_at": r.get::<_,String>(4)?}))
         }).optional()?.ok_or(MemoryError::NotFound)
@@ -380,12 +533,12 @@ impl Store {
     fn list_projects(&self, p: ListProjects) -> Result<Value> {
         input::page(p.limit)?;
         let cursor = Cursor::start(
-            "list_projects",
+            &json!(["list_projects", self.policy.projects]).to_string(),
             p.cursor.as_deref(),
             self.high_water("projects")?,
         )?;
-        let mut stmt = self.conn.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects WHERE seq<?1 AND seq<=?2 ORDER BY seq DESC LIMIT ?3")?;
-        let rows = stmt.query_map(params![cursor.after,cursor.until,p.limit+1], |r| {
+        let mut stmt = self.conn.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects WHERE seq<?1 AND seq<=?2 AND (?4 IS NULL OR id IN (SELECT value FROM json_each(?4))) ORDER BY seq DESC LIMIT ?3")?;
+        let rows = stmt.query_map(params![cursor.after,cursor.until,p.limit+1,self.policy.projects.as_ref().map(|ids|json!(ids).to_string())], |r| {
             Ok((r.get::<_,i64>(0)?, json!({"id": r.get::<_,String>(1)?, "name": r.get::<_,String>(2)?, "purpose": r.get::<_,String>(3)?, "directory": r.get::<_,Option<String>>(4)?, "created_at": r.get::<_,String>(5)?})))
         })?.collect::<std::result::Result<Vec<_>,_>>()?;
         let more = rows.len() > p.limit as usize;
@@ -480,6 +633,9 @@ impl Store {
     }
 
     fn record(&self, project: &str, id: &str) -> Result<RecordRow> {
+        if !self.policy.allows_project(project) {
+            return Err(MemoryError::AccessDenied);
+        }
         self.conn.query_row("SELECT r.*, (SELECT id FROM records s WHERE s.supersedes=r.id) AS superseded_by FROM records r WHERE r.project_id=?1 AND r.id=?2", params![project,id], Self::decode_record).optional()?.ok_or(MemoryError::NotFound)
     }
 

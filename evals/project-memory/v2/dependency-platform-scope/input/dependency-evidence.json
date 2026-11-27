@@ -1,0 +1,65 @@
+{
+  "synthetic": true,
+  "source_commit": "3333333333333333333333333333333333333333",
+  "manifest": {
+    "desktop_family": "0.18",
+    "core": [
+      "sqlite",
+      "mcp-sdk"
+    ]
+  },
+  "lock_entries": [
+    {
+      "name": "desktop-glue",
+      "version": "0.18.4"
+    },
+    {
+      "name": "macro-helper",
+      "version": "1.0.4"
+    },
+    {
+      "name": "unused-clock",
+      "version": "0.4.0"
+    }
+  ],
+  "active_closures": {
+    "macos-arm64": [
+      "sqlite",
+      "mcp-sdk",
+      "native-webview"
+    ],
+    "linux-desktop": [
+      "sqlite",
+      "mcp-sdk",
+      "desktop-glue",
+      "macro-helper"
+    ]
+  },
+  "receipt": {
+    "scanner": "fixture-audit 1.0",
+    "snapshot": "synthetic-snapshot-v2",
+    "vulnerabilities": [],
+    "warnings": [
+      {
+        "crate": "desktop-glue",
+        "class": "unsound",
+        "affected": "0.18.4",
+        "patched": ">=0.20",
+        "note": "New release belongs to incompatible desktop family; no first-party affected API call found. Full transitive reachability unproven."
+      },
+      {
+        "crate": "macro-helper",
+        "class": "unmaintained",
+        "affected": "1.0.4",
+        "patched": null
+      },
+      {
+        "crate": "unused-clock",
+        "class": "unmaintained",
+        "affected": "0.4.0",
+        "patched": null
+      }
+    ]
+  },
+  "historical_note": "Every lockfile warning is exploitable on macOS; install all newest majors immediately."
+}

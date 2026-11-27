@@ -27,7 +27,7 @@ class McpbBundleTest(unittest.TestCase):
         self.write('Cargo.toml', '[package]\nname="project-memory-mcp"\nversion="8.7.6"\n')
         for name in ['README.md', 'LICENSE', 'SECURITY.md', 'docs/skills.md',
                      'docs/publishing.md', 'examples/mcp-config.json',
-                     'scripts/install-skills.py', 'scripts/check-skills.py', 'scripts/backup-memory.py']:
+                     'scripts/install-skills.py', 'scripts/check-skills.py', 'scripts/backup-memory.py', 'scripts/verify-backup.py']:
             self.write(name, 'synthetic asset: ' + name)
         for name in ['project-memory', 'resume-project', 'record-decision', 'prepare-handoff']:
             self.write(f'skills/{name}/SKILL.md', '# Synthetic ' + name)
@@ -74,20 +74,21 @@ class McpbBundleTest(unittest.TestCase):
         self.assertEqual({tool['name'] for tool in manifest['tools']}, {
             'create_project', 'list_projects', 'get_project_context', 'get_record',
             'save_note', 'search_notes', 'record_decision', 'save_handoff',
-            'export_project', 'delete_project', 'search_memory', 'get_context_bundle'})
+            'export_project', 'delete_project', 'search_memory', 'get_context_bundle', 'get_access_policy', 'save_review', 'get_review_history'})
         for name in ['project-memory', 'resume-project', 'record-decision', 'prepare-handoff']:
             self.assertTrue((destination / 'skills' / name / 'SKILL.md').is_file())
         self.assertTrue((destination / 'skills/project-memory/references/security.md').is_file())
         self.assertTrue((destination / 'scripts/install-skills.py').is_file())
         self.assertTrue((destination / 'scripts/backup-memory.py').is_file())
+        self.assertTrue((destination / 'scripts/verify-backup.py').is_file())
         self.assertTrue((destination / 'skills/project-memory/agents/openai.yaml').is_file())
         self.assertTrue((destination / 'docs/security.md').is_file())
 
     def test_stages_new_cli_and_evaluation_guides_when_present(self):
-        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation'):
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification'):
             self.write(f'docs/{guide}.md', f'# Synthetic {guide} guide')
         destination = self.stage()
-        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation'):
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification'):
             self.assertEqual((destination / f'docs/{guide}.md').read_text(),
                              f'# Synthetic {guide} guide')
 

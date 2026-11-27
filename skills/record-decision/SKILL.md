@@ -15,6 +15,11 @@ prefixes may vary. Resolve the exact project UUID with `list_projects` when
 needed. Ask about an ambiguous project rather than writing into a guessed one.
 If the MCP connection is unavailable, provide a draft and say it is unsaved.
 
+If exposed, inspect `get_access_policy`; respect read-only and project/operation
+restrictions. A denied save does not authorize changing policy or using another
+archive connection. Keep credential values out of decisions and sources; a
+credential-screening error is not a reason to disable the guard automatically.
+
 For a change to an existing choice, read the active decision previews from
 `get_project_context`, then retrieve relevant full records with `get_record`.
 If available, `search_memory` with `kind: "decision"` can locate literal matches;

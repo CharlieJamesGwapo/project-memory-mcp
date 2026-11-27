@@ -15,6 +15,10 @@ Discover the connected tools; hosts may prefix their names. The fallback uses
 explain the missing connection and continue from context the user supplies.
 Do not claim to have retrieved memory.
 
+If exposed, inspect `get_access_policy` for this connection's restrictions.
+Respect denied project/operation access; do not widen policy, use another
+archive path or create a replacement project to bypass a refusal.
+
 Use `list_projects` with `limit` (default 20, max 50) and follow `next_cursor`
 when needed. Select the requested project using its UUID, purpose, and optional
 directory. If multiple projects match and current context does not distinguish

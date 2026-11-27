@@ -24,10 +24,10 @@ BINARIES = ('server/darwin/project-memory-mcp', 'server/linux/project-memory-mcp
 REQUIRED_ASSETS = ('README.md', 'LICENSE', 'SECURITY.md', 'docs/skills.md',
                    'docs/publishing.md', 'examples/mcp-config.json',
                    'scripts/install-skills.py', 'scripts/check-skills.py',
-                   'scripts/backup-memory.py')
+                   'scripts/backup-memory.py', 'scripts/verify-backup.py')
 OPTIONAL_ASSETS = ('CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', *(f'docs/{name}.md' for name in (
     'quickstart', 'architecture', 'api-reference', 'workflows', 'troubleshooting',
-    'data-safety', 'security', 'studio', 'cli', 'skill-evaluation', 'retrieval-evaluation')))
+    'data-safety', 'security', 'studio', 'cli', 'skill-evaluation', 'retrieval-evaluation', 'access-policy', 'code-review', 'backup-verification')))
 MAX_MEMBER_BYTES = 128 * 1024 * 1024
 MAX_TOTAL_BYTES = 384 * 1024 * 1024
 TOOLS = [
@@ -40,9 +40,12 @@ TOOLS = [
     ('record_decision', 'Preserve decisions and explicit supersession history.'),
     ('save_handoff', 'Save progress, actual verification, and next actions.'),
     ('export_project', 'Export paginated project records as Markdown.'),
-    ('delete_project', 'Delete one project only with explicit confirmation.'),
+    ('delete_project', 'Optional: deletion requires local policy opt-in and actual user authorization.'),
     ('search_memory', 'Search literal text across project record kinds.'),
     ('get_context_bundle', 'Retrieve whole records within an explicit byte budget.'),
+    ('get_access_policy', 'Inspect effective local operation and project restrictions.'),
+    ('save_review', 'Append a commit-linked review with findings and actual checks.'),
+    ('get_review_history', 'Read complete review revisions and supplied-head freshness.'),
 ]
 
 

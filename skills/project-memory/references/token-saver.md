@@ -38,6 +38,18 @@ query, kind, and supersession filter. Search is ASCII case-insensitive; other
 Unicode matches exactly. Include superseded history when explaining a change,
 not as current instructions.
 
+## Ranked terms and current policy
+
+On v0.3+, discover the actual bundle schema before using optional
+`query_mode:"terms"`. It requires a query, excludes explicit IDs and matches
+one to eight deduplicated alphanumeric terms across human text. Ranking uses
+distinct term coverage, headline coverage and recency; `matched_terms` explains
+each match. This is lexical ranking, not confidence or semantic inference.
+Literal remains the default; omit the new field for older servers that reject
+unknown inputs. More matching records can mean more bytes. On v0.4, respect
+the effective project/operation policy; a denied request does not authorize
+retrieving the archive through a different path.
+
 ## Older-server fallback
 
 Use `get_project_context` with a small `limit`, then `get_record` for relevant

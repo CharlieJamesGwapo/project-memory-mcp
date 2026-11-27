@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — 2026-11-27
+
+- Enforce per-connection project/operation policy and disable deletion by default.
+- Reject narrow credential patterns on writes/exports; sanitize argument errors
+  and inspect existing records without echoing matches.
+- Add optional metadata audit attempts/outcomes with SQLite sidecar protections.
+- Store commit-linked review notes, immutable revisions and supplied-head freshness.
+- Add six progressively loaded developer routes and temporary backup verification.
+- Extend setup, architecture, API, policy, review, recovery and evaluation guides.
+
 ## 0.3.0 — setup and context confidence
 
 - Fixed simultaneous first-use initialization: identity/schema checks now share

@@ -11,9 +11,9 @@ import threading
 
 
 class Client:
-    def __init__(self, binary, database, cwd):
+    def __init__(self, binary, database, cwd, policy=None):
         self.process = subprocess.Popen(
-            [str(binary), "--db", str(database)], cwd=cwd,
+            [str(binary), "--db", str(database), *(["--policy", str(policy)] if policy else [])], cwd=cwd,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, encoding="utf-8", bufsize=1,
         )
@@ -84,8 +84,18 @@ def smoke(binary):
         client = Client(binary, database, cwd)
         try:
             client.initialize()
+            default_tools=client.request("tools/list", {})["tools"]
+            assert len(default_tools)==14 and not any(t['name']=='delete_project' for t in default_tools)
+            assert client.tool("get_access_policy", {})["allow_delete"] is False
+        finally:
+            client.close()
+        policy=cwd / "explicit-deletion-policy.json"
+        policy.write_text(json.dumps({"allow_delete":True}))
+        client = Client(binary, database, cwd, policy)
+        try:
+            client.initialize()
             tools = client.request("tools/list", {})["tools"]
-            assert len(tools) == 12
+            assert len(tools) == 15
             a = client.tool("create_project", {"name": "Atlas", "purpose": "Synthetic MCP test"})["id"]
             b = client.tool("create_project", {"name": "Atlas", "purpose": "Separate synthetic project"})["id"]
             assert len(client.tool("list_projects", {})["items"]) == 2
@@ -105,13 +115,19 @@ def smoke(binary):
             assert bundle["records"][0]["content"] == "100%_complete 日本語"
             assert bundle["budget"]["used_bytes"] <= 16000
             assert bundle["selection"]["selection_complete"] is True
+            secret="ghp_"+"A"*36
+            client.tool("save_note", {"project_id":a,"title":"Reject synthetic credential","content":secret,"author_type":"user"},error="SECRET_DETECTED")
+            review=client.tool("save_review", {"project_id":a,"repository":"synthetic-smoke","base_commit":"1"*40,"head_commit":"2"*40,"summary":"Release protocol review","checks":[{"name":"actual smoke","outcome":"passed","result":"This temporary protocol operation completed"}],"findings":[],"author_type":"assistant","sources":[]})
+            history=client.tool("get_review_history", {"project_id":a,"current_head":"3"*40})
+            assert history["items"][0]["id"]==review["id"] and history["items"][0]["freshness"]=="stale"
+            assert history["budget"]["used_bytes"]<=16000
             export = client.tool("export_project", {"project_id": a})
             assert "superseded_by" in export["markdown"]
-            assert len(export["record_ids"]) == 4
+            assert len(export["record_ids"]) == 5
             client.tool("delete_project", {"project_id": a, "confirm": False}, error="VALIDATION_ERROR")
         finally:
             client.close()
-        client = Client(binary, database, cwd)
+        client = Client(binary, database, cwd, policy)
         try:
             client.initialize()
             assert client.tool("get_record", {"project_id": a, "record_id": note["id"]})["content"] == "100%_complete 日本語"
@@ -120,7 +136,7 @@ def smoke(binary):
             assert len(projects) == 1 and projects[0]["id"] == b
         finally:
             client.close()
-    print("Black-box MCP smoke passed: 12 tools, unified literal search, budgeted full records, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
+    print("Black-box MCP smoke passed: 14 default/15 deletion-enabled tools, local policy, credential rejection, commit-linked review history, unified literal search, budgeted full records, history, export, isolation, rejection, restart persistence, deletion and protocol-only stdout")
 
 
 if __name__ == "__main__":

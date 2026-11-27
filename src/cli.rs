@@ -6,6 +6,15 @@ use std::{path::Path, process::ExitCode};
 #[derive(Subcommand)]
 pub enum Command {
     /// Explicitly initialize an empty archive; preserve an existing supported archive.
+    /// Show effective local capabilities without opening or creating an archive.
+    Policy,
+    /// Inspect credential patterns in one project, returning categories and IDs only.
+    InspectSecrets {
+        #[arg(long = "project", value_name = "UUID")]
+        project_id: String,
+        #[command(flatten)]
+        page: PageArgs,
+    },
     Init {
         #[arg(long)]
         json: bool,
@@ -76,12 +85,28 @@ fn print_json(value: &Value) {
     );
 }
 
-pub fn execute(command: Command, path: &Path, read_only: bool) -> Result<ExitCode, String> {
+pub fn execute(
+    command: Command,
+    path: &Path,
+    read_only: bool,
+    policy: project_memory_mcp::security::AccessPolicy,
+    policy_path: Option<&Path>,
+) -> Result<ExitCode, String> {
     match command {
-        Command::Doctor { json } => return Ok(doctor(path, json)),
+        Command::Policy => {
+            print_json(&policy.summary(read_only));
+            return Ok(ExitCode::SUCCESS);
+        }
+        Command::Doctor { json } => return Ok(doctor(path, json, policy)),
         Command::PrintConfig => {
             let binary = std::env::current_exe().map_err(|_| "Cannot locate this executable")?;
             let mut args = vec!["--db".to_string(), path.to_string_lossy().into_owned()];
+            if let Some(policy_path) = policy_path {
+                args.extend([
+                    "--policy".into(),
+                    policy_path.to_string_lossy().into_owned(),
+                ]);
+            }
             if read_only {
                 args.push("--read-only".into());
             }
@@ -95,7 +120,8 @@ pub fn execute(command: Command, path: &Path, read_only: bool) -> Result<ExitCod
                         .into(),
                 );
             }
-            let store = Store::open(path).map_err(|error| error.to_string())?;
+            let store =
+                Store::open_with_policy(path, false, policy).map_err(|error| error.to_string())?;
             let diagnostics = store.diagnostics().map_err(|error| error.to_string())?;
             let report = json!({"status":"ready","database":path,"diagnostics":diagnostics,"message":"Archive is ready. Existing supported project records are preserved; no sample records were added.","next_action":"Run projects to inspect IDs, or print-config to connect your MCP client. Studio can now open this archive."});
             if as_json {
@@ -112,8 +138,14 @@ pub fn execute(command: Command, path: &Path, read_only: bool) -> Result<ExitCod
     }
     // Every inspection command opens read-only even without --read-only. Never
     // create an archive as a side effect of a typo, search, or context export.
-    let mut store = Store::open_read_only(path).map_err(|error| error.to_string())?;
+    let reject_context = policy.secrets == project_memory_mcp::security::SecretMode::Reject;
+    let mut store = Store::open_with_policy(path, true, policy).map_err(|e| e.to_string())?;
     let (operation, arguments, markdown) = match command {
+        Command::InspectSecrets { project_id, page } => (
+            "inspect_secrets",
+            json!({"project_id":project_id,"limit":page.limit,"cursor":page.cursor}),
+            false,
+        ),
         Command::Projects(page) => (
             "list_projects",
             json!({"limit":page.limit,"cursor":page.cursor}),
@@ -161,6 +193,9 @@ pub fn execute(command: Command, path: &Path, read_only: bool) -> Result<ExitCod
     let value = store
         .execute(operation, arguments)
         .map_err(|error| error.to_string())?;
+    if operation == "get_context_bundle" && reject_context {
+        project_memory_mcp::security::reject_secrets(&value).map_err(|e| e.to_string())?;
+    }
     if markdown {
         print!("{}", context_markdown(&value));
     } else {
@@ -169,7 +204,11 @@ pub fn execute(command: Command, path: &Path, read_only: bool) -> Result<ExitCod
     Ok(ExitCode::SUCCESS)
 }
 
-fn doctor(path: &Path, as_json: bool) -> ExitCode {
+fn doctor(
+    path: &Path,
+    as_json: bool,
+    policy: project_memory_mcp::security::AccessPolicy,
+) -> ExitCode {
     let missing =
         std::fs::symlink_metadata(path).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound);
     let (report, code): (Value, u8) = if missing {
@@ -178,7 +217,7 @@ fn doctor(path: &Path, as_json: bool) -> ExitCode {
             2,
         )
     } else {
-        match Store::open_read_only(path).and_then(|store| store.diagnostics()) {
+        match Store::open_with_policy(path, true, policy).and_then(|store| store.diagnostics()) {
             Ok(diagnostics) => (
                 json!({"status":"ready","database":path,"message":"Archive is readable and its SQLite integrity check passed.","diagnostics":diagnostics,"next_action":"Run projects or context to inspect it, or print-config to see a JSON stdio example."}),
                 0,

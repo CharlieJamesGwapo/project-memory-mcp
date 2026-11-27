@@ -22,7 +22,7 @@ def build_archive(binary, target, output):
     windows = "windows" in target
     archive = output / (name + (".zip" if windows else ".tar.gz"))
     assets = [(binary, name + "/project-memory-mcp" + (".exe" if windows else ""))]
-    for filename in ("README.md", "LICENSE", "server.json", "SECURITY.md", "CONTRIBUTING.md", "AGENTS.md", "CHANGELOG.md", "scripts/install-skills.py", "scripts/check-skills.py", "scripts/backup-memory.py"):
+    for filename in ("README.md", "LICENSE", "server.json", "SECURITY.md", "CONTRIBUTING.md", "AGENTS.md", "CHANGELOG.md", "scripts/install-skills.py", "scripts/check-skills.py", "scripts/backup-memory.py", "scripts/verify-backup.py"):
         assets.append((ROOT / filename, name + "/" + filename))
     for path in sorted((ROOT / "docs").glob("*.md")):
         if path.is_file() and not path.is_symlink():

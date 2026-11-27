@@ -227,7 +227,9 @@ pub struct StudioRecords {
 }
 
 pub fn parse<T: DeserializeOwned>(input: Value) -> Result<T> {
-    serde_json::from_value(input).map_err(|e| MemoryError::Validation(e.to_string()))
+    serde_json::from_value(input).map_err(|_| {
+        MemoryError::Validation("Arguments do not match the strict operation schema".into())
+    })
 }
 pub fn text(value: &str, field: &str, max: usize) -> Result<()> {
     if value.trim().is_empty() || value.chars().count() > max {
@@ -273,3 +275,7 @@ pub fn record_size(value: &Value) -> Result<()> {
     }
     Ok(())
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct NoArguments {}

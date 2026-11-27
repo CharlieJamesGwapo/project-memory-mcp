@@ -412,6 +412,8 @@ fn export_is_paginated_and_preserves_history_and_sources() {
 #[test]
 fn deletion_requires_confirmation_and_only_cascades_one_project() {
     let mut s = Store::memory().unwrap();
+    s.set_policy(serde_json::from_value(json!({"allow_delete":true})).unwrap())
+        .unwrap();
     let a = project(&mut s, "A");
     let b = project(&mut s, "B");
     call(&mut s, "save_note", note(&a, "A"));

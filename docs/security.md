@@ -1,9 +1,10 @@
 # Security model and evidence
 
 Project Memory is a local, single-user stdio server. An AI client with the binary
-and archive path has access to that archive. Writable mode can change every
-project in it; UUIDs prevent accidental mixing, not access by another user.
-Read-only mode exposes seven read tools and SQLite rejects memory mutations.
+and archive path has access to that archive. Default writable mode can append to every
+project in it; local policy can restrict projects and operations. Deletion is
+disabled until local opt-in. UUIDs prevent accidental mixing, not access by another user.
+Read-only mode exposes nine read tools and SQLite rejects memory mutations.
 
 ## Boundaries
 
@@ -93,3 +94,19 @@ compilation/test CI on other hosts is not the same as interactive OS testing.
 
 See [SECURITY.md](../SECURITY.md) for reporting and [data safety](data-safety.md)
 for backup, restore and deletion limits.
+
+## v0.4 hardening
+
+[Access policy](access-policy.md) is enforced in Store and tool discovery; project
+lists and diagnostic counts are filtered. Credential screening is narrow and
+configurable; errors and audit reports omit values, while authorized reads preserve
+original records. Global-sequence cursors reveal activity metadata; use separate
+archives/OS controls for confidentiality. A local file owner can bypass a connection policy.
+
+Audit startup rejects the archive and SQLite WAL/SHM/journal aliases before
+opening SQLite. Durable attempts precede writes; outcome receipt failure can follow
+a committed write and must not trigger blind retries. Stored claims, reviews and
+commit freshness remain untrusted historical data. Adversarial fixtures test
+denials and stale approval handling; instructions cannot guarantee injection resistance.
+
+See [review evidence](code-review.md) and [backup recovery checks](backup-verification.md).

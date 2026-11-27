@@ -20,6 +20,9 @@ struct Args {
     /// Open an existing archive and expose only read tools. Never creates a database.
     #[arg(long, global = true)]
     read_only: bool,
+    /// Absolute local policy JSON. Parsed before opening the archive.
+    #[arg(long, env = "PROJECT_MEMORY_POLICY", global = true)]
+    policy: Option<PathBuf>,
     #[command(subcommand)]
     command: Option<cli::Command>,
 }
@@ -37,6 +40,13 @@ async fn main() -> ExitCode {
 }
 
 async fn run(args: Args) -> Result<ExitCode, String> {
+    let policy = args
+        .policy
+        .as_deref()
+        .map(project_memory_mcp::security::AccessPolicy::load)
+        .transpose()
+        .map_err(|e| e.to_string())?
+        .unwrap_or_default();
     let path = match args.db {
         Some(path) => path,
         None => default_database_path().map_err(|error| error.to_string())?,
@@ -45,14 +55,16 @@ async fn run(args: Args) -> Result<ExitCode, String> {
         return Err("Database path must be absolute. Choose an explicit --db path.".into());
     }
     if let Some(command) = args.command {
-        return cli::execute(command, &path, args.read_only);
+        return cli::execute(
+            command,
+            &path,
+            args.read_only,
+            policy,
+            args.policy.as_deref(),
+        );
     }
-    let store = if args.read_only {
-        Store::open_read_only(&path)
-    } else {
-        Store::open(&path)
-    }
-    .map_err(|e| e.to_string())?;
+    let store =
+        Store::open_with_policy(&path, args.read_only, policy).map_err(|e| e.to_string())?;
     let service = MemoryServer::new(store).serve(stdio()).await.map_err(|_| {
         "MCP initialization failed; connect through an MCP stdio client".to_string()
     })?;

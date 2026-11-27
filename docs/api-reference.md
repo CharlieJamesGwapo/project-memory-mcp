@@ -1,8 +1,9 @@
 # MCP and CLI reference
 
 v0.2 added two read tools while preserving the original ten contracts. v0.3 adds
-optional ranked terms to context bundles and explicit CLI workflows. Writable
-mode exposes 12 tools; `--read-only` exposes seven. Hosts may prefix tool names.
+optional ranked terms to context bundles and explicit CLI workflows. v0.4 adds local policy and review records. Default writable
+mode exposes 14 tools; explicit deletion opt-in exposes 15; `--read-only` exposes nine.
+Operation allowlists can reduce inventory further. Hosts may prefix tool names.
 Unknown fields, invalid UUIDs and out-of-range values are rejected.
 
 | Tool | Required arguments | Result / optional arguments |
@@ -18,7 +19,10 @@ Unknown fields, invalid UUIDs and out-of-range values are rejected.
 | `record_decision` | `project_id`, `decision`, `rationale`, `author_type` | New decision; optional `sources`, `supersedes` |
 | `save_handoff` | `project_id`, `summary`, `completed`, `unfinished`, `next_actions`, `blockers`, `verification`, `author_type` | New immutable handoff; optional `sources` |
 | `export_project` | `project_id` | Full-record Markdown page, record IDs and next cursor; `limit`, `cursor` |
-| `delete_project` | `project_id`, `confirm:true` | Permanent project/record deletion; requires the client's actual user authorization |
+| `delete_project` | `project_id`, `confirm:true` | Disabled by default; local `allow_delete:true`, allowed operation and actual user authorization required |
+| `get_access_policy` | None | Effective project/operation restrictions, read-only and screening mode, audit enabled status |
+| `save_review` | `project_id`, `repository`, `base_commit`, `head_commit`, `summary`, `checks`, `findings`, `author_type` | Complete immutable review note; optional `sources`, `previous_review_id` |
+| `get_review_history` | `project_id` | Complete review note page; `limit`, `cursor`, `current_head`, `max_bytes` |
 
 `author_type` is `user` or `assistant`. Sources are reference strings, not fetched
 or independently verified evidence. Handoff work/verification fields are arrays
@@ -158,3 +162,19 @@ v0.3 also provides explicit `init [--json]` and read-only `projects`, `search`,
 `record` and `context [--json]`. See [the CLI guide](cli.md) for flags, UUIDs,
 pagination, stdout/stderr and the distinction between canonical MCP budgets and
 rendered CLI output. No-subcommand MCP behavior is unchanged.
+
+## v0.4 policy and review contracts
+
+See [local access policy](access-policy.md) for strict configuration, defaults, audit
+semantics and credential boundaries. `ACCESS_DENIED`, `SECRET_DETECTED` and
+`AUDIT_RECEIPT_FAILED` are new structured errors. Unsupported/malformed tool
+arguments are sanitized; they never echo raw argument values.
+
+See [code review](code-review.md) for complete field bounds, revision and freshness
+contracts. Review history has its own limit 1..20 (default 10), canonical
+byte range 4096..65536 (default 16000), complete records and scoped cursors.
+
+CLI adds `--policy ABSOLUTE_JSON`, environment `PROJECT_MEMORY_POLICY`, `policy`,
+and `inspect-secrets --project UUID [--limit N --cursor CURSOR]`. `print-config`
+preserves the policy path. Inspection reports are sanitized; ordinary reads
+continue to return complete original data.

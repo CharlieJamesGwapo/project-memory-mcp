@@ -1,6 +1,6 @@
 [package]
 name = "project-memory-mcp"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.100"
 description = "Local project memory, explicit decisions, and handoffs for AI assistants over MCP"
@@ -29,6 +29,7 @@ sha2 = "0.10"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "io-std", "sync"] }
 uuid = { version = "1", features = ["v4", "serde"] }
+unicode-normalization = "0.1"
 
 [dev-dependencies]
 tempfile = "3"

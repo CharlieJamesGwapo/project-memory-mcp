@@ -32,6 +32,13 @@ with severity and precise locations. It distinguishes checks actually run from
 reasoning and unavailable evidence. Memory alone does not prove code correctness.
 Review does not authorize edits, deployment, publication or contacting anyone.
 
+For a requested saved review on v0.4, the assistant discovers the actual
+`save_review` schema and records exact base/head commits, attributed evidence,
+checks and finding statuses. `get_review_history` can compare the recorded head
+with a supplied current head. A different hash makes the review potentially
+stale; it does not establish that the findings were fixed. Ordinary notes are
+an explicitly labeled fallback on older servers. See [code review](code-review.md).
+
 ## Coordinate implementation and review
 
 > Use project-memory to divide this feature between implementation and review,
@@ -71,6 +78,48 @@ The security route checks actual source behavior, input-to-sensitive-operation
 paths, dependency advisories and available checks. It separates verified
 findings from unknowns. It does not run untrusted installers or live exploits,
 publish findings, or claim that a clean scan proves malware absence.
+
+The v0.4 access-policy read tool describes the connection's actual restrictions.
+The assistant respects project/operation limits and read-only mode. A denied
+write does not authorize modifying policy or accessing the archive through
+another route. Narrow credential detection and metadata audit records provide
+scoped checks, not universal secret detection or proof of human consent.
+
+## Choose tests and assess dependency changes
+
+> Use project-memory to plan meaningful regression checks for this change, then
+> review the dependency upgrade against our supported platforms.
+
+Test planning maps each material behavior to an observable check and identifies
+existing coverage. Dependency review distinguishes active runtime/build paths
+from optional lockfile entries, checks current version-specific evidence and
+reports compatibility or reachability limits. Neither planning nor review alone
+updates source or dependency locks. If implementation is requested, the assistant
+executes the authorized checks through its host and reports actual outcomes.
+
+## Refactor and review architecture
+
+> Use project-memory to simplify this module while preserving its public API,
+> errors and authorization behavior.
+
+The safe-refactor route identifies the stable contract and makes the smallest
+useful change with relevant regression coverage. Architecture review assesses
+actual entry points, state ownership and trust boundaries against stated goals.
+It compares viable alternatives without assuming a larger system is required.
+A design assessment alone leaves implementation unchanged.
+
+## Assess memory quality and release readiness
+
+> Use project-memory to identify stale review evidence and assess this release.
+> Leave history intact and tell me which checks are still missing.
+
+Memory hygiene returns record IDs, evidence-based reasons and reversible next
+actions for the portion actually inspected. It does not equate age with error,
+delete history automatically, or print sensitive original values. Release
+readiness ties the assessment to an exact source/version and actual artifacts,
+checksums, provenance and relevant platform checks. Source tests, successful CI
+and interactive OS verification remain separate evidence. Publication occurs
+only within the user's actual authorization and is followed by remote readback.
 
 ## Debug and verify with current evidence
 

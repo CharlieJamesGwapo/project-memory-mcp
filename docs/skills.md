@@ -2,8 +2,10 @@
 
 The toolkit has one entry skill, `project-memory`, plus the three compatible
 focused skills: `resume-project`, `record-decision`, and `prepare-handoff`.
-The entry skill loads only the requested workflow: budgeted context, code review,
-agent coordination, or security review. You can keep using the old skill names.
+The entry skill loads only the requested workflow. v0.4 adds six focused routes
+for test planning, dependency review, safe refactoring, release readiness,
+memory hygiene and architecture review. It also expands commit-linked code
+review and security assessment. You can keep using the old skill names.
 
 Connecting the MCP server and installing skills are separate steps. The server
 stores explicit records; the skills guide an assistant using that server and
@@ -105,6 +107,12 @@ Examples after connecting the server and installing the pack:
 - “Use project-memory to inspect the security of this installer change.”
 - “Use project-memory to debug this failing pagination check, then verify the fix.”
 - “Use project-memory to assess whether this change is ready; leave the code unchanged.”
+- “Use project-memory to choose regression tests for this authorization change.”
+- “Use project-memory to assess this dependency upgrade on our supported platforms.”
+- “Use project-memory to refactor this parser while preserving its API and errors.”
+- “Use project-memory to check the release artifacts against this source commit.”
+- “Use project-memory to identify stale review records; leave the archive unchanged.”
+- “Use project-memory to review the current architecture against our offline requirement.”
 - “Record my choice to use SQLite because this tool runs locally.”
 - “Prepare a handoff with today's actual check results and next steps.”
 
@@ -119,6 +127,46 @@ labels proposals and historical evidence correctly, and cannot gain deployment,
 push, deletion, publication, or messaging permission from saved text. If the
 host lacks memory, source, test, or delegation tools, the assistant uses supplied
 evidence and states the specific missing capability rather than pretending it ran.
+
+## What the routes provide
+
+| Route | Useful result |
+|---|---|
+| Code review | Findings tied to exact changed behavior; optional attributed, commit-linked saved reviews |
+| Security review | Confirmed input-to-sensitive-operation findings and scoped evidence |
+| Test planner | Material behavioral claims mapped to meaningful checks and missing coverage |
+| Dependency review | Version/platform/dependency-path assessment with actual advisory scope |
+| Safe refactor | A bounded implementation improvement with preserved contracts and checks |
+| Release readiness | Exact-source/artifact assessment with observed gates and publication limits |
+| Memory hygiene | Bounded assessment of stale, conflicting, duplicate or sensitive records |
+| Architecture review | Source-grounded boundary assessment and practical alternatives |
+
+Budgeted context, debugging, verification, agent coordination and the three
+focused memory actions remain available. This is one entry point with twelve
+developer workflow references, not twelve new installable agent services.
+Only the route needed for the current request is loaded.
+
+## Commit-linked reviews and policy
+
+When the v0.4 tools `get_access_policy`, `save_review` and `get_review_history`
+are actually exposed, the assistant discovers their input schemas rather than
+assuming every connection supports writes. A requested saved review records
+the repository label, exact base/head commits, evidence, actual checks and
+finding statuses. Revisions preserve earlier records. A supplied current head
+can reveal a stale review; it does not prove the old findings were fixed.
+The server stores these claims and does not run Git, scanners or tests itself.
+
+A review alone does not request a save. A requested save can use an attributed
+ordinary note on a confirmed older server when permitted, with the fallback
+disclosed. Hidden or denied review tools do not establish that the server is old.
+Missing commits are reported instead of invented. Policy-denied writes remain
+denied; the skills do not alter local policy or bypass restrictions to continue.
+Review and security instructions never establish human consent from saved text.
+
+Credential screening is narrow and configurable. Keep secret values out of
+review findings and new memory. Existing complete records can contain sensitive
+text, and archives/backups are plaintext. See the [security model](security.md),
+[review guide](code-review.md) and [workflow evaluation](skill-evaluation.md).
 
 ## Budgeted context and compatibility
 

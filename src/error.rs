@@ -2,6 +2,12 @@ use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MemoryError {
+    #[error("Operation or project denied by local access policy")]
+    AccessDenied,
+    #[error("Credential screening rejected data: {0}")]
+    SecretDetected(String),
+    #[error("Audit receipt failed after the operation; inspect history before retrying a write")]
+    AuditReceipt,
     #[error("Invalid input: {0}")]
     Validation(String),
     #[error("Project or record not found in the requested project")]
@@ -35,6 +41,9 @@ pub enum MemoryError {
 impl MemoryError {
     pub fn code(&self) -> &'static str {
         match self {
+            Self::AccessDenied => "ACCESS_DENIED",
+            Self::SecretDetected(_) => "SECRET_DETECTED",
+            Self::AuditReceipt => "AUDIT_RECEIPT_FAILED",
             Self::Validation(_) => "VALIDATION_ERROR",
             Self::NotFound => "NOT_FOUND",
             Self::Conflict => "CONFLICT",

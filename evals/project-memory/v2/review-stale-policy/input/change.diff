@@ -1,0 +1,6 @@
+--- a/access.py
++++ b/access.py
+@@ -1,2 +1,2 @@
+ def can_read(active, admin, member):
+-    return active and (admin or member)
++    return active or (admin or member)

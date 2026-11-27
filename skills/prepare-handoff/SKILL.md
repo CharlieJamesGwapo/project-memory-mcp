@@ -15,6 +15,11 @@ duplicate names before saving. Discover `save_handoff` and the read tools
 under the host's tool prefixes. If unavailable, provide the handoff text and
 state that it has not been saved to Project Memory.
 
+If exposed, inspect `get_access_policy`; respect read-only and project/operation
+restrictions. A denied write does not authorize widening policy or using another
+archive connection. Use safe locations/categories for sensitive findings, not
+credential values; narrow screening does not identify every secret.
+
 Read the latest context and full relevant records using `get_project_context`
 and `get_record`. When available, `get_context_bundle` can supply complete
 relevant records without duplicate reads; inspect its omission metadata. Read

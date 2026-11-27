@@ -8,6 +8,9 @@ async fn client(path: &Path) -> rmcp::service::RunningService<rmcp::RoleClient, 
         .arg("--db")
         .arg(path)
         .current_dir(path.parent().unwrap());
+    let policy = path.parent().unwrap().join("test-policy.json");
+    std::fs::write(&policy, b"{\"allow_delete\":true}").unwrap();
+    command.arg("--policy").arg(policy);
     let transport = TokioChildProcess::new(command).unwrap();
     tokio::time::timeout(Duration::from_secs(10), ().serve(transport))
         .await
@@ -16,12 +19,12 @@ async fn client(path: &Path) -> rmcp::service::RunningService<rmcp::RoleClient, 
 }
 
 #[tokio::test]
-async fn real_client_discovers_twelve_tools_calls_them_and_reconnects() {
+async fn real_client_discovers_enabled_tools_calls_them_and_reconnects() {
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("memory with spaces.sqlite");
     let first = client(&path).await;
     let tools = first.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 12);
+    assert_eq!(tools.len(), 15);
     for name in [
         "create_project",
         "list_projects",
@@ -131,7 +134,7 @@ async fn readonly_client_exposes_only_read_tools_and_rejects_direct_mutation_cal
     command.arg("--db").arg(&path).arg("--read-only");
     let reader = ().serve(TokioChildProcess::new(command).unwrap()).await.unwrap();
     let tools = reader.list_all_tools().await.unwrap();
-    assert_eq!(tools.len(), 7);
+    assert_eq!(tools.len(), 9);
     assert!(
         tools
             .iter()

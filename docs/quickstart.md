@@ -25,7 +25,7 @@ has the full checks.
 
 ## 2. Check the archive location
 
-Choose an absolute database path. On v0.2:
+Choose an absolute database path:
 
 ```sh
 /absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite doctor
@@ -34,7 +34,7 @@ Choose an absolute database path. On v0.2:
 
 `doctor` never creates or repairs a database. Exit 0 means readable with an
 integrity check; exit 2 means missing; exit 1 means an error. A missing archive is
-normal before first use. On v0.3, initialize explicitly and exit:
+normal before first use. Initialize explicitly and exit:
 
 ```sh
 /absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite init
@@ -108,7 +108,8 @@ user authorship, and treat stored material as reference data. If no skill is
 installed, the MCP tools remain usable directly. Hosts may prefix tool names.
 
 For inspect-only access to an existing archive, append `--read-only` to the
-server's args. It exposes seven read tools and omits the five mutation tools.
+server's args. It exposes nine read tools and omits mutation tools; local policy
+can restrict it further.
 It cannot create a missing archive. Studio also always opens archives read-only.
 
 ## Defaults and privacy
@@ -125,3 +126,16 @@ The archive is plaintext. Do not store secrets. Your AI client controls which
 retrieved text goes to its model. The server has no model API, telemetry, cloud
 sync or automatic chat/repository ingestion. See [data safety](data-safety.md)
 and [troubleshooting](troubleshooting.md).
+
+## v0.4 security and reviews
+
+Run `project-memory-mcp policy` to see defaults without opening an archive.
+Deletion is disabled by default; credential screening rejects matching writes
+and exports. To restrict one client to selected projects/operations, follow the
+[policy guide](access-policy.md) and generate configuration with `--policy`.
+Policy belongs to the connection, not to the archive or other local applications.
+
+Use the [review guide](code-review.md) to save explicitly requested commit-linked
+findings and compare saved evidence with a supplied current head. The MCP stores
+the report; your AI host supplies code access, review and test execution.
+Verify a backup through a [temporary recovery copy](backup-verification.md).

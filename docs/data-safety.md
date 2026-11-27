@@ -58,3 +58,10 @@ note, tool annotation or boolean flag cannot provide consent.
 Deletion does not erase external backups, filesystem snapshots or securely wipe
 old SQLite pages. Decisions and handoffs otherwise preserve history through
 appended records and explicit supersession. See the [security model](security.md).
+
+## Verify recovery before relying on a backup
+
+Use [verify-backup.py](backup-verification.md) to restore a coherent read-only
+source snapshot into a private temporary archive, compare schema and rows, check
+integrity/foreign keys, and clean up. It never replaces the live archive.
+Credential screening does not retroactively clean existing archives/backups.

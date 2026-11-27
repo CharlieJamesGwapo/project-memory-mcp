@@ -1,6 +1,6 @@
 # Use Project Memory from a terminal
 
-The v0.3 CLI can initialize an archive and inspect saved memory without an AI
+The CLI can initialize an archive and inspect saved memory without an AI
 client. It uses the same validated Rust Store as MCP. With no subcommand, the
 executable still starts the stdio MCP server and waits for a client handshake.
 
@@ -77,3 +77,13 @@ stderr; argument-parser errors usually exit 2. `doctor` specifically exits 2 for
 a missing archive, 0 for ready and 1 for error. Do not assume `--json` makes runtime
 errors JSON. Historical saved test results are still historical; inspect current
 source and run the relevant checks through your host tools.
+
+## Local security controls (v0.4)
+
+`policy` prints defaults/effective restrictions without creating an archive.
+`--policy /absolute/policy.json` or `PROJECT_MEMORY_POLICY` loads strict local
+configuration before opening an archive. `print-config` retains that path.
+`inspect-secrets --project UUID [--limit 20 --cursor CURSOR]` reads a sanitized
+credential-category report; follow its cursor until null. `context` output is
+screened by default; ordinary `record`/`search` outputs remain complete.
+See [policy](access-policy.md) for configuration, audit outcomes and limitations.

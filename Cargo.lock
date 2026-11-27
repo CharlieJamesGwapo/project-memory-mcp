@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "project-memory-mcp"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "base64",
  "clap",
@@ -733,6 +733,7 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "unicode-normalization",
  "uuid",
 ]
 

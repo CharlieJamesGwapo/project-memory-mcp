@@ -128,3 +128,20 @@ an artifact; it does not establish that every dependency is harmless.
 
 See [security](security.md), [publishing](publishing.md), and
 [contributor instructions](../CONTRIBUTING.md) for checks and release boundaries.
+
+## v0.4 capability and evidence layers
+
+`src/security.rs` parses local policy, validates destinations, screens narrow
+credential patterns and writes optional sanitized metadata receipts. Store checks
+read-only state, operation/project policy and matching write credentials before
+transaction dispatch. Audit attempts precede transactions; final receipts follow,
+so no cross-file atomicity is promised. MCP discovery reflects effective policy.
+
+`src/review.rs` defines strict review contracts; `src/store/reviews.rs` appends
+reviews as schema-1 notes, checks same-project revision chains inside the writer
+transaction and returns complete bounded history. Commit freshness compares supplied
+IDs; it does not inspect the filesystem. Existing adapters preserve the extra note
+metadata. Skills load focused review/security/refactoring/testing routes as needed.
+
+Policy is per Store/connection, not archive authentication. Studio opens an independent
+local read-only connection. See [policy boundaries](access-policy.md).

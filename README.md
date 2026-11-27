@@ -6,13 +6,28 @@ A local Rust + SQLite MCP server, a focused developer workflow pack, and an
 optional desktop workspace. Remember why a decision was made, retrieve useful
 context within a visible budget, and continue with evidence you can inspect.
 
-**Toolkit v0.3.0:** the features below describe this source version. Download
+**Toolkit v0.4.0:** the features below describe this source version. Download
 matching builds from [GitHub Releases](https://github.com/CharlieJamesGwapo/project-memory-mcp/releases)
 and check `--version`. The older v0.1 release has ten tools and three skills.
 
 [Get started](docs/quickstart.md) · [Skills](docs/skills.md) ·
 [Architecture](docs/architecture.md) · [API](docs/api-reference.md) ·
 [Security](docs/security.md) · [Troubleshooting](docs/troubleshooting.md)
+
+## New in v0.4.0
+
+- [Local security policy](docs/access-policy.md): project/operation restrictions,
+  deletion disabled by default, credential screening and optional metadata audit.
+- [Commit-linked reviews](docs/code-review.md): complete findings and actual checks,
+  immutable revisions and visible freshness relative to a supplied commit.
+- [Expanded skills](docs/skills.md): twelve developer workflow references, including
+  test planning, dependency review, refactoring, release readiness and memory hygiene.
+- [Backup verification](docs/backup-verification.md): restore and compare a private
+  temporary copy without replacing the original archive.
+
+Discovery exposes 14 tools by default, 15 with local deletion opt-in, and nine
+read tools in read-only mode. Policy can further reduce access. Existing schema-1
+archives need no migration. Security and evaluation limits are documented openly.
 
 ## What you get
 
@@ -42,7 +57,7 @@ Agent workflows use the host's actual capabilities and existing permissions.
 > Use project-memory to continue Atlas's authentication work with a small
 > context budget. Check current code before relying on old test results.
 
-For v0.3, initialize explicitly, then inspect setup without changing client settings:
+Initialize explicitly, then inspect setup without changing client settings:
 
 ```sh
 /absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite init
@@ -52,7 +67,7 @@ For v0.3, initialize explicitly, then inspect setup without changing client sett
 
 A missing archive is normal before first use. Use explicit `init` or start
 writable mode through your MCP client to create one. Append `--read-only` for inspection of an existing
-archive; it exposes seven read tools. Running the binary with no subcommand
+archive; it exposes nine read tools. Running the binary with no subcommand
 waits for the MCP handshake.
 
 The [standalone CLI](docs/cli.md) lists project UUIDs, searches literal text,
@@ -130,7 +145,7 @@ These provide scoped evidence, not a guarantee of malware absence. Read the
 | [Skills](docs/skills.md) | One entry workflow, offline installation, customization, upgrade and restore |
 | [Workflows](docs/workflows.md) | Practical resume, budget, review, agents, decisions, handoff and audit examples |
 | [Architecture](docs/architecture.md) | Components, data flow, schema, transactions, retrieval and desktop boundaries |
-| [API](docs/api-reference.md) | All 12 MCP tools, inputs, byte budgets, pagination, errors and CLI commands |
+| [API](docs/api-reference.md) | All 15 supported MCP tools, conditional access, inputs, byte budgets, pagination, errors and CLI commands |
 | [Studio](docs/studio.md) | Desktop setup, search, suggestions and Markdown briefs |
 | [Data safety](docs/data-safety.md) | Consistent backup, restore, privacy, history and deletion |
 | [Security](docs/security.md) | Threat model, actual audit limits, upstream warnings and release integrity |
