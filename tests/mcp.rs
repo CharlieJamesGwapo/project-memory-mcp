@@ -230,6 +230,36 @@ async fn context_bundle_budget_matches_real_mcp_result_with_json_text_fallback()
         search.structured_content.unwrap()["items"][0]["id"],
         small["id"]
     );
+    let ranked = client
+        .call_tool(
+            CallToolRequestParams::new("get_context_bundle").with_arguments(
+                json!({"project_id":project["id"],"query":"SMALL complete","query_mode":"terms","max_bytes":4096})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+            ),
+        )
+        .await
+        .unwrap();
+    assert_ne!(ranked.is_error, Some(true));
+    let ranked_value = ranked.structured_content.as_ref().unwrap();
+    assert_eq!(ranked_value["records"][0]["id"], small["id"]);
+    assert_eq!(
+        ranked_value["records"][0]["matched_terms"],
+        json!(["small", "complete"])
+    );
+    assert_eq!(ranked_value["selection"]["mode"], "terms");
+    let ranked_canonical = serde_json::to_vec(&rmcp::model::CallToolResult::structured(
+        ranked_value.clone(),
+    ))
+    .unwrap()
+    .len();
+    assert_eq!(ranked_value["budget"]["used_bytes"], ranked_canonical);
+    assert!(serde_json::to_vec(&ranked).unwrap().len() <= ranked_canonical);
+    assert!(ranked_canonical <= 4096);
+    let ranked_fallback: Value =
+        serde_json::from_str(&ranked.content[0].as_text().unwrap().text).unwrap();
+    assert_eq!(&ranked_fallback, ranked_value);
     client.cancel().await.unwrap();
 }
 

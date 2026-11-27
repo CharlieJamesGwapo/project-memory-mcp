@@ -1,13 +1,11 @@
 #![forbid(unsafe_code)]
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use project_memory_mcp::{paths::default_database_path, server::MemoryServer, store::Store};
 use rmcp::{ServiceExt, transport::stdio};
-use serde_json::{Value, json};
-use std::{
-    path::{Path, PathBuf},
-    process::ExitCode,
-};
+use std::{path::PathBuf, process::ExitCode};
+
+mod cli;
 
 #[derive(Parser)]
 #[command(
@@ -23,19 +21,7 @@ struct Args {
     #[arg(long, global = true)]
     read_only: bool,
     #[command(subcommand)]
-    command: Option<Command>,
-}
-
-#[derive(Subcommand)]
-enum Command {
-    /// Check an existing archive without writing to it or starting MCP.
-    Doctor {
-        /// Print a machine-readable report. Exit codes: ready 0, missing 2, error 1.
-        #[arg(long)]
-        json: bool,
-    },
-    /// Print a Claude Desktop/Cursor-style JSON stdio config; does not change files.
-    PrintConfig,
+    command: Option<cli::Command>,
 }
 
 #[tokio::main]
@@ -58,24 +44,8 @@ async fn run(args: Args) -> Result<ExitCode, String> {
     if !path.is_absolute() {
         return Err("Database path must be absolute. Choose an explicit --db path.".into());
     }
-    match args.command {
-        Some(Command::Doctor { json }) => return Ok(doctor(&path, json)),
-        Some(Command::PrintConfig) => {
-            let binary = std::env::current_exe().map_err(|_| "Cannot locate this executable")?;
-            let mut config_args = vec!["--db".to_string(), path.to_string_lossy().into_owned()];
-            if args.read_only {
-                config_args.push("--read-only".into());
-            }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(
-                    &json!({"mcpServers":{"project-memory":{"command":binary,"args":config_args}}})
-                )
-                .expect("config serializes")
-            );
-            return Ok(ExitCode::SUCCESS);
-        }
-        None => {}
+    if let Some(command) = args.command {
+        return cli::execute(command, &path, args.read_only);
     }
     let store = if args.read_only {
         Store::open_read_only(&path)
@@ -91,49 +61,4 @@ async fn run(args: Args) -> Result<ExitCode, String> {
         result = tokio::signal::ctrl_c() => { result.map_err(|_|"Cannot handle shutdown signal".to_string())?; }
     }
     Ok(ExitCode::SUCCESS)
-}
-
-fn doctor(path: &Path, as_json: bool) -> ExitCode {
-    let missing =
-        std::fs::symlink_metadata(path).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound);
-    let (report, code): (Value, u8) = if missing {
-        (
-            json!({"status":"missing","database":path,"message":"No Project Memory archive exists at this path.","next_action":"Connect this binary through your MCP client in writable mode to create an archive, or choose an existing --db path. Use --read-only only after an archive exists."}),
-            2,
-        )
-    } else {
-        match Store::open_read_only(path).and_then(|store| store.diagnostics()) {
-            Ok(diagnostics) => (
-                json!({"status":"ready","database":path,"message":"Archive is readable and its SQLite integrity check passed.","diagnostics":diagnostics,"next_action":"Connect Project Memory in your MCP client. Run print-config to see a JSON configuration example."}),
-                0,
-            ),
-            Err(error) => (
-                json!({"status":"error","database":path,"message":error.to_string(),"error_code":error.code(),"next_action":"Choose an existing Project Memory archive. Check file permissions and upgrade if its schema is newer. Doctor does not repair or modify memory records or schema; SQLite may maintain WAL/SHM coordination files."}),
-                1,
-            ),
-        }
-    };
-    if as_json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&report).expect("report serializes")
-        );
-    } else {
-        println!(
-            "Project Memory doctor: {}",
-            report["status"].as_str().unwrap()
-        );
-        println!("Database: {path:?}");
-        println!("{}", report["message"].as_str().unwrap());
-        if let Some(diagnostics) = report.get("diagnostics") {
-            println!(
-                "Schema {} · {} projects · {} records · read-only inspection",
-                diagnostics["schema_version"],
-                diagnostics["project_count"],
-                diagnostics["record_count"]
-            );
-        }
-        println!("{}", report["next_action"].as_str().unwrap());
-    }
-    ExitCode::from(code)
 }

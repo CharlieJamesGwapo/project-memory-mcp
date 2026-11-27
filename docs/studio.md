@@ -71,10 +71,17 @@ clipboard copy and a Markdown save dialog. The frontend cannot choose an
 arbitrary write path. Exports refuse SQLite files, symlinks and non-Markdown
 destinations. Studio does not migrate, adopt or initialize databases.
 
-The initial local macOS build has an ad-hoc executable signature and has no
-Developer ID signature or notarization. Public signed desktop distribution is
-separate from the existing MCP release and Registry listing.
-The Studio source does not change the released MCP v0.1.0 artifacts.
+The macOS Apple Silicon preview is available from GitHub Releases. From v0.2.1
+its complete application bundle has an ad-hoc resource seal verified before
+packaging and after extracting the exact ZIP. It has no Developer ID signature
+or notarization. Studio is a separate download from the MCP server/Registry
+package. Existing versioned artifacts remain intact; the security guide records
+the earlier v0.2.0 Studio packaging defect and current platform scope.
+
+If you have no archive yet, expand the welcome screen's setup instructions.
+With the server installed, `project-memory-mcp init` creates an empty archive and
+prints its path without an MCP handshake. Then choose **Open Database**. Use your
+connected MCP client to add projects and saved records; Studio remains read-only.
 
 ## Toolkit retrieval
 
@@ -82,8 +89,18 @@ The Search tab searches literal text across notes, decision rationale and all
 handoff sections. Filter by record kind or include superseded decisions when
 reviewing history. Open a result for its full record.
 
-The optional **Suggest context** section retrieves whole records for a literal
-task phrase or the recent handoff/active decisions/notes. It reports the byte
+The optional **Suggest context** section offers three presets:
+
+| Preset | Retrieval bytes | Whole records |
+|---|---|---|
+| Small | 8,000 | 4 |
+| Balanced (default) | 16,000 | 8 |
+| Expanded | 32,000 | 12 |
+
+Advanced controls allow custom byte/record caps. Presets change settings only; **Build suggestions**
+explicitly retrieves records. A task can use the default literal phrase or
+opt-in ranked terms; without a task, it uses the recent handoff/active decisions/notes. Matched
+terms explain lexical matches, not semantic meaning or confidence. It reports the byte
 budget, heuristic token estimate and omissions. Review suggestions before using
 **Add suggestions** or **Replace brief**. These are explicit actions; retrieval
 does not silently change your manual selection.

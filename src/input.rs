@@ -112,13 +112,24 @@ fn default_bundle_records() -> usize {
     8
 }
 
+#[derive(Debug, Serialize, Deserialize, JsonSchema, Default, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ContextQueryMode {
+    #[default]
+    Literal,
+    Terms,
+}
+
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ContextBundle {
     pub project_id: String,
-    /// Optional literal search of current record text, mutually exclusive with record_ids.
+    /// Optional query of current record text, mutually exclusive with record_ids.
     #[serde(default)]
     pub query: Option<String>,
+    /// Query matching: literal phrase (default), or ranked lexical terms. Terms requires query.
+    #[serde(default)]
+    pub query_mode: ContextQueryMode,
     /// Explicit, atomic selection of 1–20 unique record UUIDs in requested order.
     #[serde(default)]
     pub record_ids: Option<Vec<String>>,

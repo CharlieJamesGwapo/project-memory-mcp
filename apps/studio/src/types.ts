@@ -92,6 +92,7 @@ export interface MemoryAdapter {
 export type SelectionReason =
   | "explicit_selection"
   | "literal_query_match"
+  | "ranked_term_match"
   | "latest_handoff"
   | "active_decision"
   | "recent_note";
@@ -100,9 +101,14 @@ export interface ContextBundle {
     Project,
     "id" | "name" | "purpose" | "directory" | "created_at"
   >;
-  records: (MemoryRecord & { selection_reason: SelectionReason })[];
+  records: (MemoryRecord & {
+    selection_reason: SelectionReason;
+    matched_terms?: string[];
+  })[];
   selection: {
-    mode: "explicit" | "query" | "recent";
+    mode: "explicit" | "query" | "recent" | "terms";
+    query_terms?: string[];
+    ranking?: "term_coverage_then_headline_then_recency";
     candidate_count: number;
     candidate_window_truncated: boolean;
     omitted_by_budget: number;

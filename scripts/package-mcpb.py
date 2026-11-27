@@ -27,7 +27,7 @@ REQUIRED_ASSETS = ('README.md', 'LICENSE', 'SECURITY.md', 'docs/skills.md',
                    'scripts/backup-memory.py')
 OPTIONAL_ASSETS = ('CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', *(f'docs/{name}.md' for name in (
     'quickstart', 'architecture', 'api-reference', 'workflows', 'troubleshooting',
-    'data-safety', 'security', 'studio')))
+    'data-safety', 'security', 'studio', 'cli', 'skill-evaluation', 'retrieval-evaluation')))
 MAX_MEMBER_BYTES = 128 * 1024 * 1024
 MAX_TOTAL_BYTES = 384 * 1024 * 1024
 TOOLS = [

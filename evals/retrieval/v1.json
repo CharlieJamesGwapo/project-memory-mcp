@@ -1,0 +1,371 @@
+{
+  "fixture_version": 1,
+  "name": "Project Memory synthetic retrieval v1",
+  "projects": [
+    {
+      "alias": "distributed",
+      "name": "Distributed fields",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    },
+    {
+      "alias": "ranking",
+      "name": "Rank before window",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    },
+    {
+      "alias": "phrase",
+      "name": "Ordinary phrase",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    },
+    {
+      "alias": "history",
+      "name": "Current history",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    },
+    {
+      "alias": "budget",
+      "name": "Whole-record byte cap",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    },
+    {
+      "alias": "foreign",
+      "name": "Separate project",
+      "purpose": "Synthetic versioned retrieval evaluation; no private project data."
+    }
+  ],
+  "records": [
+    {
+      "alias": "distributed-record",
+      "project": "distributed",
+      "kind": "note",
+      "data": {
+        "title": "Windows credential handling",
+        "content": "Authentication behavior differs across operating systems. Full original evidence: café 日本語, quotes \" and a backslash \\ plus newline\nEND OF COMPLETE RECORD.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/distributed-record"
+        ]
+      }
+    },
+    {
+      "alias": "strong-old",
+      "project": "ranking",
+      "kind": "decision",
+      "data": {
+        "decision": "Windows authentication",
+        "rationale": "Both task terms apply to this older architectural decision. Keep the complete rationale.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/strong-old"
+        ]
+      }
+    },
+    {
+      "alias": "weak",
+      "project": "ranking",
+      "kind": "note",
+      "data": {
+        "title": "Recent unrelated activity",
+        "content": "Windows release bookkeeping only; this does not cover the other task term.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/weak"
+        ]
+      },
+      "repeat": 205
+    },
+    {
+      "alias": "phrase-record",
+      "project": "phrase",
+      "kind": "note",
+      "data": {
+        "title": "Local setup",
+        "content": "Use local memory for explicit project context. Preserve these full original words.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/phrase-record"
+        ]
+      }
+    },
+    {
+      "alias": "historical-record",
+      "project": "history",
+      "kind": "decision",
+      "data": {
+        "decision": "retiredmarker",
+        "rationale": "This old decision is explicitly superseded by a current one.",
+        "author_type": "user",
+        "sources": []
+      }
+    },
+    {
+      "alias": "current-record",
+      "project": "history",
+      "kind": "decision",
+      "supersedes": "historical-record",
+      "data": {
+        "decision": "Current replacement",
+        "rationale": "Use the current explicit decision instead of the old marker.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/current-record"
+        ]
+      }
+    },
+    {
+      "alias": "source-only",
+      "project": "history",
+      "kind": "note",
+      "data": {
+        "title": "Ordinary note",
+        "content": "Ordinary text without the task marker.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retiredmarker/source-only"
+        ]
+      }
+    },
+    {
+      "alias": "foreign-record",
+      "project": "foreign",
+      "kind": "note",
+      "data": {
+        "title": "retiredmarker",
+        "content": "retiredmarker belongs to another project and must never appear.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/foreign-record"
+        ]
+      }
+    },
+    {
+      "alias": "small-record",
+      "project": "budget",
+      "kind": "note",
+      "data": {
+        "title": "Capacity evidence",
+        "content": "Capacity: retain this complete small record, café 日本語, quote \" backslash \\ and newline\nEND OF COMPLETE SMALL RECORD.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/small-record"
+        ]
+      }
+    },
+    {
+      "alias": "large-record",
+      "project": "budget",
+      "kind": "note",
+      "data": {
+        "title": "Capacity oversized evidence",
+        "content": "Capacity xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx END OF COMPLETE LARGE RECORD.",
+        "author_type": "user",
+        "sources": [
+          "fixture://retrieval/v1/large-record"
+        ]
+      }
+    }
+  ],
+  "cases": [
+    {
+      "name": "distributed-fields",
+      "project": "distributed",
+      "query": "windows authentication",
+      "max_bytes": 16000,
+      "max_records": 8,
+      "relevant_aliases": [
+        "distributed-record"
+      ],
+      "forbidden_aliases": [],
+      "expected": {
+        "literal": {
+          "selected_aliases": [],
+          "candidate_count": 0,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true
+        },
+        "terms": {
+          "selected_aliases": [
+            "distributed-record"
+          ],
+          "candidate_count": 1,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true,
+          "query_terms": [
+            "windows",
+            "authentication"
+          ],
+          "matched_terms": {
+            "distributed-record": [
+              "windows",
+              "authentication"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "rank-before-window",
+      "project": "ranking",
+      "query": "authentication windows",
+      "max_bytes": 16000,
+      "max_records": 1,
+      "relevant_aliases": [
+        "strong-old"
+      ],
+      "forbidden_aliases": [],
+      "expected": {
+        "literal": {
+          "selected_aliases": [],
+          "candidate_count": 0,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true
+        },
+        "terms": {
+          "selected_aliases": [
+            "strong-old"
+          ],
+          "candidate_count": 200,
+          "candidate_window_truncated": true,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 199,
+          "selection_complete": false,
+          "query_terms": [
+            "authentication",
+            "windows"
+          ],
+          "matched_terms": {
+            "strong-old": [
+              "authentication",
+              "windows"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "literal-phrase",
+      "project": "phrase",
+      "query": "local memory",
+      "max_bytes": 16000,
+      "max_records": 8,
+      "relevant_aliases": [
+        "phrase-record"
+      ],
+      "forbidden_aliases": [],
+      "expected": {
+        "literal": {
+          "selected_aliases": [
+            "phrase-record"
+          ],
+          "candidate_count": 1,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true
+        },
+        "terms": {
+          "selected_aliases": [
+            "phrase-record"
+          ],
+          "candidate_count": 1,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true,
+          "query_terms": [
+            "local",
+            "memory"
+          ],
+          "matched_terms": {
+            "phrase-record": [
+              "local",
+              "memory"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "history-source-isolation",
+      "project": "history",
+      "query": "retiredmarker",
+      "max_bytes": 16000,
+      "max_records": 8,
+      "relevant_aliases": [],
+      "forbidden_aliases": [
+        "historical-record",
+        "source-only",
+        "foreign-record"
+      ],
+      "expected": {
+        "literal": {
+          "selected_aliases": [],
+          "candidate_count": 0,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true
+        },
+        "terms": {
+          "selected_aliases": [],
+          "candidate_count": 0,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 0,
+          "omitted_by_record_limit": 0,
+          "selection_complete": true,
+          "query_terms": [
+            "retiredmarker"
+          ],
+          "matched_terms": {}
+        }
+      }
+    },
+    {
+      "name": "byte-cap-omission",
+      "project": "budget",
+      "query": "capacity",
+      "max_bytes": 4096,
+      "max_records": 8,
+      "relevant_aliases": [
+        "small-record"
+      ],
+      "forbidden_aliases": [],
+      "expected": {
+        "literal": {
+          "selected_aliases": [
+            "small-record"
+          ],
+          "candidate_count": 2,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 1,
+          "omitted_by_record_limit": 0,
+          "selection_complete": false
+        },
+        "terms": {
+          "selected_aliases": [
+            "small-record"
+          ],
+          "candidate_count": 2,
+          "candidate_window_truncated": false,
+          "omitted_by_budget": 1,
+          "omitted_by_record_limit": 0,
+          "selection_complete": false,
+          "query_terms": [
+            "capacity"
+          ],
+          "matched_terms": {
+            "small-record": [
+              "capacity"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

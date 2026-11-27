@@ -28,10 +28,13 @@ URL and SHA-256 from the final built artifact; do not invent a future hash.
    passing the successful preparation run ID. It verifies the producing workflow,
    repository, ancestry and unchanged Rust source/locks before using artifacts.
    The read-only preparation job assembles a universal macOS server, stages and
-   validates the MCPB, unpacks/smoke-tests the actual result, and generates exact
+   validates the MCPB, unpacks/smoke-tests the actual result, evaluates its real
+   retrieval contract using versioned synthetic fixtures, and generates exact
    Registry metadata and checksums. It also builds the macOS arm64 Studio preview,
    verifies its complete ad-hoc bundle signature, and repeats verification after
    extracting the exact ZIP that will be published.
+   The `retrieval-evaluation.json` receipt is included in checksums/attestations;
+   it measures synthetic protocol/selection behavior, not model cost or universal quality.
 4. A separate job attests exact release assets using GitHub build provenance.
    The final publishing job verifies the MCPB attestation and creates a new
    versioned GitHub Release with narrow repository-write permission. It never

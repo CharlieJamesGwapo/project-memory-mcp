@@ -97,7 +97,9 @@ jobs:
           python scripts/package-mcpb.py --pack bundle-staging --archive "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb"
           python scripts/package-mcpb.py --unpack "dist-release/project-memory-mcp-${RELEASE_VERSION}.mcpb" --output-dir bundle-unpacked
       - name: Smoke-test actual unpacked bundle
-        run: python scripts/smoke-test.py bundle-unpacked/server/darwin/project-memory-mcp
+        run: |
+          python scripts/smoke-test.py bundle-unpacked/server/darwin/project-memory-mcp
+          python scripts/evaluate-retrieval.py bundle-unpacked/server/darwin/project-memory-mcp > dist-release/retrieval-evaluation.json
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '26'

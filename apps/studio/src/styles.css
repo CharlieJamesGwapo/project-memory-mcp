@@ -1512,6 +1512,58 @@ select:focus-visible {
 .suggestion-budgets .suggestion-field {
   margin-top: 0;
 }
+.suggestion-presets,
+.suggestion-match-mode {
+  border: 0;
+  padding: 0;
+  margin: 15px 0 10px;
+  min-width: 0;
+}
+.suggestion-presets legend,
+.suggestion-match-mode legend {
+  color: var(--subtle);
+  font-size: 9px;
+  margin-bottom: 9px;
+}
+.suggestion-presets > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+.suggestion-preset {
+  border: 1px solid #c8d1bc;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  padding: 8px 3px;
+  font-size: 10px;
+}
+.suggestion-preset[aria-pressed="true"] {
+  background: #e0e8d5;
+  border-color: #7b8f73;
+  font-weight: 600;
+}
+.suggestion-size {
+  font-size: 9px;
+}
+.suggestion-match-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 12px 7px 0;
+  font-size: 10px;
+}
+.suggestion-match-mode input {
+  accent-color: var(--ink);
+}
+.suggestion-advanced {
+  margin: 4px 0 12px;
+}
+.suggestion-advanced summary {
+  padding: 7px 0 12px;
+  color: var(--subtle);
+  font-size: 10px;
+}
 .suggestion-body form > button {
   width: 100%;
   margin-bottom: 14px;
@@ -1578,4 +1630,23 @@ select:focus-visible {
   .brief-content {
     max-height: 560px;
   }
+}
+:root .welcome-setup {
+  margin-top: 1.5rem;
+  max-width: 60ch;
+  text-align: left;
+}
+
+.welcome-setup summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.welcome-setup p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.welcome-setup code {
+  overflow-wrap: anywhere;
 }

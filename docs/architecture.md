@@ -23,6 +23,7 @@ not create a model service, run a background agent, or grant permissions.
 | Area | Responsibility |
 |---|---|
 | `src/main.rs` | CLI, database selection, read-only mode, doctor/config output, stdio lifecycle |
+| `src/cli.rs` | Explicit setup and read-only terminal commands; JSON/Markdown output without a model |
 | `src/server.rs` | Typed MCP tools, annotations, blocking-worker dispatch and read-only tool inventory |
 | `src/input.rs` | Strict schemas, field/size checks and canonical project/record IDs |
 | `src/store.rs` | SQLite identity, schema 1, transactions, immutable records and project isolation |
@@ -33,6 +34,11 @@ not create a model service, run a background agent, or grant permissions.
 
 Connections use parameterized SQL. Each operation runs in a transaction.
 Mutations use an immediate transaction; read operations use a deferred snapshot.
+Writable startup validates identity and creates an empty schema within one
+serialized writer transaction, rechecking after a concurrent initializer. WAL
+configuration follows outside the transaction, sharing a five-second SQLite
+contention budget with initialization. Only BUSY/LOCKED setup contention is
+retried; record writes are not automatically replayed.
 Writes are not idempotent: after a connection failure, inspect history before
 retrying a save. UUIDs separate projects; they are not authentication.
 
@@ -85,6 +91,19 @@ order or literal task query and considers at most 200 candidates. The result
 reports omissions instead of silently shortening evidence. Explicit selections
 are atomic: the full set fits, or the request fails. [API details](api-reference.md)
 explain canonical result bytes, compatibility text and estimated token counts.
+
+Optional bundle terms mode ranks decoded human text by distinct query coverage,
+headline coverage and insertion order before limiting the candidate window.
+Bound SQL placeholders carry every query value. It requires no persistent index
+or schema migration, so both writable MCP and existing read-only Studio sessions
+use the same archive. It is lexical selection rather than semantic inference.
+Studio uses a committed alphanumeric range table generated from the pinned Rust
+toolchain. Its native test compares every Unicode scalar, preventing differences
+between a webview's older Unicode database and the server's tokenizer.
+
+Explicit terminal commands reuse the same Store operations. Only `init` opens
+writable mode; inspection opens an existing archive read-only. Printed context
+JSON/Markdown is a separate representation from the measured canonical MCP result.
 
 ## Desktop boundary
 

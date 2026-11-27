@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 — setup and context confidence
+
+- Fixed simultaneous first-use initialization: identity/schema checks now share
+  one serialized writer transaction, with bounded WAL contention handling.
+- Added explicit `init` and read-only `projects`, `search`, `record` and `context`
+  CLI commands, including complete-record Markdown and JSON context output.
+- Added opt-in ranked term retrieval with matched terms and deterministic
+  coverage/headline/recency ranking before the candidate window. Literal mode,
+  12-tool inventory, full-record budgets and schema 1 remain compatible.
+- Added Studio Small/Balanced/Expanded presets, Custom advanced caps, explicit
+  terms selection and clearer no-match/budget feedback; fixed sample refill parity.
+- Added debugging and verification references to the same four-folder skill pack,
+  plus versioned skill and real-MCP retrieval evaluation fixtures.
+- Updated onboarding, CLI, API and architecture guides without adding a hosted
+  service, model key, automatic source ingestion or server-side agent runtime.
+
 ## 0.2.1 — macOS bundle signing
 
 - Seal the complete Studio application bundle with Tauri's explicit ad-hoc

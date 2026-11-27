@@ -1,6 +1,6 @@
 [package]
 name = "project-memory-mcp"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.100"
 description = "Local project memory, explicit decisions, and handoffs for AI assistants over MCP"
@@ -10,7 +10,7 @@ repository = "https://github.com/CharlieJamesGwapo/project-memory-mcp"
 readme = "README.md"
 keywords = ["mcp", "ai", "memory", "sqlite", "skills"]
 categories = ["command-line-utilities", "database"]
-include = ["/src/**", "/tests/*.rs", "/tests/*_test.py", "/scripts/*.py", "/skills/**", "/examples/**", "/docs/*.md", "/AGENTS.md", "/CHANGELOG.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/CONTRIBUTING.md", "/SECURITY.md", "/server.json"]
+include = ["/src/**", "/tests/*.rs", "/tests/*_test.py", "/scripts/*.py", "/skills/**", "/examples/**", "/evals/**/*.json", "/evals/**/*.md", "/evals/**/*.py", "/docs/*.md", "/AGENTS.md", "/CHANGELOG.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/CONTRIBUTING.md", "/SECURITY.md", "/server.json"]
 
 [package.metadata.mcp]
 name = "io.github.CharlieJamesGwapo/project-memory"

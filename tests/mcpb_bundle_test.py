@@ -83,6 +83,14 @@ class McpbBundleTest(unittest.TestCase):
         self.assertTrue((destination / 'skills/project-memory/agents/openai.yaml').is_file())
         self.assertTrue((destination / 'docs/security.md').is_file())
 
+    def test_stages_new_cli_and_evaluation_guides_when_present(self):
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation'):
+            self.write(f'docs/{guide}.md', f'# Synthetic {guide} guide')
+        destination = self.stage()
+        for guide in ('cli', 'skill-evaluation', 'retrieval-evaluation'):
+            self.assertEqual((destination / f'docs/{guide}.md').read_text(),
+                             f'# Synthetic {guide} guide')
+
     def test_pack_unpack_roundtrip_preserves_native_bytes_and_executable_modes(self):
         self.assert_packer()
         destination = self.stage()

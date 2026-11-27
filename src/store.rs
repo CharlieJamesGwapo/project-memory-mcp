@@ -7,7 +7,11 @@ use rusqlite::{
     Connection, OptionalExtension, Row, params, params_from_iter, types::Value as SqlValue,
 };
 use serde_json::{Value, json};
-use std::{fs, path::Path, time::Duration};
+use std::{
+    fs,
+    path::Path,
+    time::{Duration, Instant},
+};
 
 mod retrieval;
 mod studio;
@@ -25,6 +29,78 @@ fn timestamp() -> String {
     time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
         .expect("current UTC timestamp is representable as RFC3339")
+}
+
+fn configure_wal(conn: &Connection, deadline: Instant) -> rusqlite::Result<()> {
+    let timeout = Duration::from_secs(5);
+    let result = loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        conn.busy_timeout(remaining)?;
+        match conn.execute_batch("PRAGMA journal_mode=WAL;") {
+            Ok(()) => break Ok(()),
+            Err(error)
+                if matches!(&error,
+                    rusqlite::Error::SqliteFailure(code, _) if matches!(code.code,
+                        rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)
+                ) && Instant::now() < deadline =>
+            {
+                std::thread::sleep(
+                    Duration::from_millis(10)
+                        .min(deadline.saturating_duration_since(Instant::now())),
+                );
+            }
+            Err(error) => break Err(error),
+        }
+    };
+    conn.busy_timeout(timeout)?;
+    result
+}
+
+fn startup_timeout(conn: &Connection, deadline: Instant) -> rusqlite::Result<()> {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    conn.busy_timeout(remaining)?;
+    if remaining.is_zero() {
+        return Err(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_BUSY),
+            None,
+        ));
+    }
+    Ok(())
+}
+
+// Call only inside a transaction so every identity value describes one snapshot.
+fn initializable_schema(
+    transaction: &rusqlite::Transaction<'_>,
+    deadline: Instant,
+) -> Result<bool> {
+    startup_timeout(transaction, deadline)?;
+    let application: i64 = transaction.query_row("PRAGMA application_id", [], |r| r.get(0))?;
+    startup_timeout(transaction, deadline)?;
+    let version: i64 = transaction.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+    startup_timeout(transaction, deadline)?;
+    let objects: i64 = transaction.query_row(
+        "SELECT COUNT(*) FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*'",
+        [],
+        |r| r.get(0),
+    )?;
+    if application == 0 && version == 0 && objects == 0 {
+        return Ok(true);
+    }
+    if application != 0x504d4350 {
+        return Err(MemoryError::ForeignDatabase);
+    }
+    if version > 1 {
+        return Err(MemoryError::NewerSchema);
+    }
+    if version != 1 {
+        return Err(MemoryError::ForeignDatabase);
+    }
+    startup_timeout(transaction, deadline)?;
+    transaction.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects LIMIT 0")?;
+    startup_timeout(transaction, deadline)?;
+    transaction
+        .prepare("SELECT seq,id,project_id,kind,data,created_at,supersedes FROM records LIMIT 0")?;
+    Ok(false)
 }
 
 impl Store {
@@ -58,7 +134,10 @@ impl Store {
     }
 
     pub fn memory() -> Result<Self> {
-        Self::initialize(Connection::open_in_memory()?)
+        Self::initialize(
+            Connection::open_in_memory()?,
+            Instant::now() + Duration::from_secs(5),
+        )
     }
 
     /// Open an existing Project Memory database without creating or changing it.
@@ -98,6 +177,7 @@ impl Store {
     }
 
     pub fn open(path: &Path) -> Result<Self> {
+        let deadline = Instant::now() + Duration::from_secs(5);
         if !path.is_absolute() {
             return Err(MemoryError::Validation(
                 "database path must be absolute".into(),
@@ -132,54 +212,50 @@ impl Store {
             use std::os::unix::fs::OpenOptionsExt;
             options.mode(0o600);
         }
-        match options.open(path) {
-            Ok(_) => {}
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+        let created = match options.open(path) {
+            Ok(_) => true,
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => false,
             Err(e) => return Err(e.into()),
+        };
+        if !created {
+            // Even a rejected read-write connection can checkpoint a foreign WAL
+            // on close. Refuse unsupported existing archives before opening RW.
+            if !fs::symlink_metadata(path)?.file_type().is_file() {
+                return Err(MemoryError::Validation(
+                    "database path must be a regular file, not a directory or symlink".into(),
+                ));
+            }
+            let mut preflight =
+                Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+            startup_timeout(&preflight, deadline)?;
+            let snapshot = preflight.transaction()?;
+            initializable_schema(&snapshot, deadline)?;
+            startup_timeout(&snapshot, deadline)?;
+            snapshot.commit()?;
         }
-        Self::initialize(Connection::open_with_flags(
-            path,
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE,
-        )?)
+        Self::initialize(
+            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE)?,
+            deadline,
+        )
     }
 
-    fn initialize(conn: Connection) -> Result<Self> {
-        conn.busy_timeout(Duration::from_secs(5))?;
-        let application: i64 = conn.query_row("PRAGMA application_id", [], |r| r.get(0))?;
-        let version: i64 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
-        let objects: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*'",
-            [],
-            |r| r.get(0),
-        )?;
-        let initialize = application == 0 && version == 0 && objects == 0;
-        // PMCP is an identity marker, not authentication. Never adopt another app's schema.
-        if !initialize && application != 0x504d4350 {
-            return Err(MemoryError::ForeignDatabase);
-        }
-        if !initialize && version > 1 {
-            return Err(MemoryError::NewerSchema);
-        }
-        if !initialize {
-            if version != 1 {
-                return Err(MemoryError::ForeignDatabase);
-            }
-            conn.prepare("SELECT seq,id,name,purpose,directory,created_at FROM projects LIMIT 0")?;
-            conn.prepare(
-                "SELECT seq,id,project_id,kind,data,created_at,supersedes FROM records LIMIT 0",
-            )?;
-        }
-        conn.execute_batch(
-            "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
-        )?;
+    fn initialize(mut conn: Connection, deadline: Instant) -> Result<Self> {
+        startup_timeout(&conn, deadline)?;
+        // These connection-local settings do not alter a foreign archive.
+        conn.execute_batch("PRAGMA foreign_keys=ON; PRAGMA synchronous=NORMAL;")?;
+        startup_timeout(&conn, deadline)?;
+        // Identity and schema must come from one serialized snapshot. A peer
+        // may have initialized the freshly reserved file while we waited.
+        let transaction =
+            conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let initialize = initializable_schema(&transaction, deadline)?;
         if initialize {
-            conn.execute_batch(
-                "BEGIN IMMEDIATE;
-            CREATE TABLE IF NOT EXISTS projects (
+            for statement in [
+                "CREATE TABLE IF NOT EXISTS projects (
               seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
               name TEXT NOT NULL, purpose TEXT NOT NULL, directory TEXT, created_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS records (
+            );",
+                "CREATE TABLE IF NOT EXISTS records (
               seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
               project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
               kind TEXT NOT NULL CHECK(kind IN ('note','decision','handoff')),
@@ -187,14 +263,21 @@ impl Store {
               supersedes TEXT UNIQUE,
               UNIQUE(project_id,id),
               FOREIGN KEY(project_id,supersedes) REFERENCES records(project_id,id)
-            );
-            CREATE INDEX IF NOT EXISTS records_project_seq ON records(project_id,seq DESC);
-            CREATE INDEX IF NOT EXISTS records_project_kind ON records(project_id,kind,seq DESC);
-            PRAGMA application_id=1347240784;
-            PRAGMA user_version=1;
-            COMMIT;",
-            )?;
+            );",
+                "CREATE INDEX IF NOT EXISTS records_project_seq ON records(project_id,seq DESC);",
+                "CREATE INDEX IF NOT EXISTS records_project_kind ON records(project_id,kind,seq DESC);",
+                "PRAGMA application_id=1347240784;",
+                "PRAGMA user_version=1;",
+            ] {
+                startup_timeout(&transaction, deadline)?;
+                transaction.execute_batch(statement)?;
+            }
         }
+        startup_timeout(&transaction, deadline)?;
+        transaction.commit()?;
+        // SQLite cannot switch journal modes inside the writer transaction.
+        // Retry only lock contention; identity failures above never reach WAL.
+        configure_wal(&conn, deadline)?;
         Ok(Self {
             conn,
             read_only: false,

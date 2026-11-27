@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { recordTitle } from "./context";
 import { validLiteralQuery } from "./sampleRetrieval";
+import { taskTerms } from "./termTokenizer";
 import type {
   ContextBundle,
   MemoryAdapter,
@@ -20,10 +21,17 @@ export interface ContextSuggestionsProps {
 const reasons: Record<SelectionReason, string> = {
   explicit_selection: "Explicit selection",
   literal_query_match: "Literal phrase match",
+  ranked_term_match: "Ranked task-term match",
   latest_handoff: "Latest handoff",
   active_decision: "Active decision",
   recent_note: "Recent note",
 };
+const presets = [
+  { key: "small", label: "Small", bytes: "8000", records: "4" },
+  { key: "balanced", label: "Balanced", bytes: "16000", records: "8" },
+  { key: "expanded", label: "Expanded", bytes: "32000", records: "12" },
+] as const;
+type PresetKey = (typeof presets)[number]["key"] | "custom";
 export default function ContextSuggestions({
   adapter,
   session,
@@ -33,6 +41,8 @@ export default function ContextSuggestions({
   onStale,
 }: ContextSuggestionsProps) {
   const [query, setQuery] = useState("");
+  const [queryMode, setQueryMode] = useState<"literal" | "terms">("literal");
+  const [preset, setPreset] = useState<PresetKey>("balanced");
   const [maxBytes, setMaxBytes] = useState("16000");
   const [maxRecords, setMaxRecords] = useState("8");
   const [bundle, setBundle] = useState<ContextBundle | null>(null);
@@ -47,6 +57,7 @@ export default function ContextSuggestions({
     setApplied("");
     setBusy(false);
     setQuery("");
+    setQueryMode("literal");
     return () => {
       request.current++;
     };
@@ -79,6 +90,15 @@ export default function ContextSuggestions({
       setError("Use an optional literal phrase of 1–2000 characters.");
       return;
     }
+    if (queryMode === "terms") {
+      const terms = taskTerms(query);
+      if (terms.length < 1 || terms.length > 8) {
+        setError(
+          "Use 1–8 distinct alphanumeric task terms. Repeated ASCII terms count once.",
+        );
+        return;
+      }
+    }
     const current = ++request.current;
     setBusy(true);
     setBundle(null);
@@ -91,6 +111,7 @@ export default function ContextSuggestions({
         {
           project_id: project.id,
           ...(query ? { query } : {}),
+          ...(queryMode === "terms" ? { query_mode: "terms" } : {}),
           max_bytes: bytes,
           max_records: count,
         },
@@ -137,7 +158,34 @@ export default function ContextSuggestions({
           active decisions, and recent notes. Review them before changing your
           brief.
         </p>
-        <form onSubmit={(event) => void build(event)}>
+        <form noValidate onSubmit={(event) => void build(event)}>
+          <fieldset className="suggestion-presets">
+            <legend>Context size</legend>
+            <div>
+              {presets.map((option) => (
+                <button
+                  className="suggestion-preset"
+                  type="button"
+                  key={option.key}
+                  aria-pressed={preset === option.key}
+                  onClick={() => {
+                    edit();
+                    setPreset(option.key);
+                    setMaxBytes(option.bytes);
+                    setMaxRecords(option.records);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <p className="suggestion-explanation suggestion-size">
+            {preset === "custom" ? <strong>Custom limits</strong> : null}
+            {preset === "custom" ? " · " : ""}
+            Up to {maxRecords || "—"} whole records ·{" "}
+            {maxBytes ? Number(maxBytes).toLocaleString("en") : "—"} retrieval bytes.
+          </p>
           <label className="suggestion-field">
             Task phrase <span>(optional)</span>
             <input
@@ -147,43 +195,85 @@ export default function ContextSuggestions({
               onChange={(event) => {
                 edit();
                 setQuery(event.target.value);
+                if (!event.target.value) setQueryMode("literal");
               }}
             />
           </label>
-          <div className="suggestion-budgets">
-            <label className="suggestion-field">
-              Retrieval bytes
-              <input
-                aria-label="Retrieval byte budget"
-                type="number"
-                min="4096"
-                max="65536"
-                step="1"
-                required
-                value={maxBytes}
-                onChange={(event) => {
-                  edit();
-                  setMaxBytes(event.target.value);
-                }}
-              />
-            </label>
-            <label className="suggestion-field">
-              Record limit
-              <input
-                aria-label="Suggested record limit"
-                type="number"
-                min="1"
-                max="20"
-                step="1"
-                required
-                value={maxRecords}
-                onChange={(event) => {
-                  edit();
-                  setMaxRecords(event.target.value);
-                }}
-              />
-            </label>
-          </div>
+          {query ? (
+            <fieldset className="suggestion-match-mode">
+              <legend>Match task</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="context-query-mode"
+                  checked={queryMode === "literal"}
+                  onChange={() => {
+                    edit();
+                    setQueryMode("literal");
+                  }}
+                />
+                Literal phrase
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="context-query-mode"
+                  checked={queryMode === "terms"}
+                  onChange={() => {
+                    edit();
+                    setQueryMode("terms");
+                  }}
+                />
+                Any task terms
+              </label>
+            </fieldset>
+          ) : null}
+          {query && queryMode === "terms" ? (
+            <p className="suggestion-explanation">
+              Matches any of 1–8 distinct task terms. More term matches come first,
+              then headline matches and recency. This is lexical, not semantic
+              search.
+            </p>
+          ) : null}
+          <details className="suggestion-advanced">
+            <summary>Advanced limits</summary>
+            <div className="suggestion-budgets">
+              <label className="suggestion-field">
+                Retrieval bytes
+                <input
+                  aria-label="Retrieval byte budget"
+                  type="number"
+                  min="4096"
+                  max="65536"
+                  step="1"
+                  required
+                  value={maxBytes}
+                  onChange={(event) => {
+                    edit();
+                    setPreset("custom");
+                    setMaxBytes(event.target.value);
+                  }}
+                />
+              </label>
+              <label className="suggestion-field">
+                Record limit
+                <input
+                  aria-label="Suggested record limit"
+                  type="number"
+                  min="1"
+                  max="20"
+                  step="1"
+                  required
+                  value={maxRecords}
+                  onChange={(event) => {
+                    edit();
+                    setPreset("custom");
+                    setMaxRecords(event.target.value);
+                  }}
+                />
+              </label>
+            </div>
+          </details>
           <button
             className="secondary"
             type="submit"
@@ -219,6 +309,12 @@ export default function ContextSuggestions({
               (ceil(bytes / 4)). This is not a model token count or a measure of
               billing savings.
             </p>
+            {bundle.selection.mode === "terms" ? (
+              <p className="suggestion-explanation">
+                Ranked by distinct task terms, then headline coverage and recency.
+                Task terms: {bundle.selection.query_terms?.join(", ")}.
+              </p>
+            ) : null}
             <p className="suggestion-explanation">
               Candidate window: {bundle.selection.candidate_count} examined (up
               to 200)
@@ -247,6 +343,9 @@ export default function ContextSuggestions({
                       <small>
                         {record.kind} ·{" "}
                         {reasons[record.selection_reason] || "Selected record"}
+                        {record.matched_terms?.length
+                          ? ` · matched ${record.matched_terms.join(", ")}`
+                          : ""}
                       </small>
                     </li>
                   ))}
@@ -274,8 +373,13 @@ export default function ContextSuggestions({
               </>
             ) : (
               <p className="suggestion-explanation">
-                No whole records fit this request. Try a broader task phrase or
-                increase the limits.
+                {bundle.selection.candidate_count === 0
+                  ? query
+                    ? "No records matched this request. Try a shorter phrase or different task terms."
+                    : "No records matched this request. Current records saved to this project will appear here."
+                  : bundle.selection.omitted_by_budget > 0
+                    ? "Matching records were too large for this byte budget. Choose Expanded or increase the Advanced limits; records are kept whole."
+                    : "No whole records are available for this request."}
               </p>
             )}
           </div>

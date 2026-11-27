@@ -847,6 +847,20 @@ export default function App({
               Explore sample workspace
             </button>
           </div>
+          <details className="welcome-setup">
+            <summary>Need to create your first archive?</summary>
+            <p>
+              With the Project Memory server on your PATH, run this command in
+              your terminal, then open the database path it prints:
+            </p>
+            <code>project-memory-mcp init</code>
+            <p>
+              If you downloaded the server without installing it on PATH, use
+              its full executable path followed by <code>init</code>. The archive
+              starts empty. Connect your MCP client to add projects and memory;
+              Studio opens those records read-only.
+            </p>
+          </details>
           {message ? (
             <p
               className={`status-message ${messageError ? "error" : ""}`}

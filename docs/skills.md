@@ -103,6 +103,8 @@ Examples after connecting the server and installing the pack:
 - “Use project-memory to review this diff; do not change the source.”
 - “Use project-memory to plan two agents for the backend and frontend.”
 - “Use project-memory to inspect the security of this installer change.”
+- “Use project-memory to debug this failing pagination check, then verify the fix.”
+- “Use project-memory to assess whether this change is ready; leave the code unchanged.”
 - “Record my choice to use SQLite because this tool runs locally.”
 - “Prepare a handoff with today's actual check results and next steps.”
 
@@ -125,6 +127,12 @@ The v0.2 route can use `search_memory` for literal cross-kind matches and
 are 16000 bytes and 8 records; accepted ranges are 4096–65536 bytes and 1–20
 records. Explicit record-ID selections either fit entirely or return an error.
 Automatic selection reports budget/record omissions and its candidate window.
+
+On v0.3, explicit ranked terms can recover words spread across fields using
+`get_context_bundle` with `query_mode:"terms"`. Discover that input field in the
+actual tool schema before using it: v0.2 also has the tool but rejects the new
+field. Literal requests omit `query_mode` for older-server compatibility.
+Terms ranking is lexical coverage, not semantic understanding or confidence.
 
 The cap measures the serialized MCP result, including the structured/text
 compatibility representation and metadata, excluding the JSON-RPC envelope.
@@ -162,3 +170,7 @@ collision/symlink refusal, backup replacement, and restore. Realistic behavioral
 checks should additionally exercise budget omissions, stale evidence, missing
 host tools, actual diff evidence, and plan-only agent requests. Identical results
 from every model or client are not guaranteed.
+
+The [workflow evaluation guide](skill-evaluation.md) includes versioned fixtures
+and observed baseline/forward results for the debugging and verification routes.
+No token-efficiency or behavioral superiority claim is inferred from those runs.

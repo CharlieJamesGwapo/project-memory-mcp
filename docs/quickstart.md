@@ -1,6 +1,7 @@
 # Start with Project Memory
 
-Project Memory needs a local stdio-capable MCP client. Prebuilt server binaries
+Use a local stdio-capable MCP client for assistant integration, or the terminal
+commands to initialize and inspect an archive without a model. Prebuilt server binaries
 need no Rust, Node.js, model key or separate database service. The optional
 desktop app and skill installer have separate requirements below.
 
@@ -33,8 +34,15 @@ Choose an absolute database path. On v0.2:
 
 `doctor` never creates or repairs a database. Exit 0 means readable with an
 integrity check; exit 2 means missing; exit 1 means an error. A missing archive is
-normal before first use. Start the server through your client in writable mode
-to create one. `doctor --json` supplies machine-readable results.
+normal before first use. On v0.3, initialize explicitly and exit:
+
+```sh
+/absolute/path/project-memory-mcp --db /absolute/path/memory.sqlite init
+```
+
+Or start the server through your client in writable mode to create one.
+`doctor --json` supplies machine-readable results. The [CLI guide](cli.md) covers
+read-only project listing, search, complete records and Markdown context briefs.
 
 `print-config` prints JSON; it does not edit client settings. Replace example
 paths with real paths. Do not paste the placeholder literally.

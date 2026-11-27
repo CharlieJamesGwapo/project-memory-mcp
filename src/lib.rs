@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 pub mod error;
 mod export;
+pub use export::context_markdown;
 pub mod input;
 mod output;
 mod pagination;

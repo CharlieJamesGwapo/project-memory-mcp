@@ -53,6 +53,13 @@ Vite production build while Tauri compiles its embedded assets. Test actual
 native dialogs and data against a temporary synthetic database. Browser sample
 success alone does not prove native IPC or another OS works.
 
+Studio term parsing uses committed Unicode ranges generated from the pinned
+Rust toolchain, rather than the webview's Unicode database. When upgrading Rust,
+regenerate them with `scripts/generate-term-table.rs` using the commands in that
+file. The native `term_table` test checks the version and every Unicode scalar;
+run it as part of the normal native suite. Keep the generated data and tokenizer
+tests together so Node, older webviews and the server agree.
+
 New skill instructions need structural validation and realistic forward checks.
 Evaluate unavailable host tools, untrusted memory, stale verification and budget
 omissions. Keep model/tool claims tied to actual evidence; avoid fixed savings

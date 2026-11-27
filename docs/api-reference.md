@@ -1,7 +1,8 @@
 # MCP and CLI reference
 
-v0.2 adds two read tools while preserving the original ten contracts. Writable
-mode exposes12 tools; `--read-only` exposes seven. Hosts may prefix tool names.
+v0.2 added two read tools while preserving the original ten contracts. v0.3 adds
+optional ranked terms to context bundles and explicit CLI workflows. Writable
+mode exposes 12 tools; `--read-only` exposes seven. Hosts may prefix tool names.
 Unknown fields, invalid UUIDs and out-of-range values are rejected.
 
 | Tool | Required arguments | Result / optional arguments |
@@ -13,7 +14,7 @@ Unknown fields, invalid UUIDs and out-of-range values are rejected.
 | `save_note` | `project_id`, `title`, `content`, `author_type` | New note; optional `sources` |
 | `search_notes` | `project_id`, `query` | Literal title/content note previews; `limit`, `cursor` |
 | `search_memory` | `project_id`, `query` | Literal note/decision/handoff previews; `kind`, `include_superseded`, `limit`, `cursor` |
-| `get_context_bundle` | `project_id` | Whole-record selection; `query` or `record_ids`, `max_bytes`, `max_records` |
+| `get_context_bundle` | `project_id` | Whole-record selection; `query`/`query_mode` or `record_ids`, `max_bytes`, `max_records` |
 | `record_decision` | `project_id`, `decision`, `rationale`, `author_type` | New decision; optional `sources`, `supersedes` |
 | `save_handoff` | `project_id`, `summary`, `completed`, `unfinished`, `next_actions`, `blockers`, `verification`, `author_type` | New immutable handoff; optional `sources` |
 | `export_project` | `project_id` | Full-record Markdown page, record IDs and next cursor; `limit`, `cursor` |
@@ -34,11 +35,11 @@ Search is literal: `%`, `_`, SQL punctuation, quotes, newlines and NUL do not
 become query syntax. ASCII matching is case-insensitive; other Unicode matching
 is exact. Unified search covers human-facing scalar and list text, including
 rationale and handoff sections. It does not search IDs, authorship or source
-pointers. `include_superseded` defaultsfalse on unified search; `kind` can be
+pointers. `include_superseded` defaults false on unified search; `kind` can be
 `note`, `decision` or `handoff`.
 
 Previews have `full_record_required:true`. Fetch the relevant complete records.
-Context headlines are bounded: up to20 active decisions and a latest handoff
+Context headlines are bounded: up to 20 active decisions and a latest handoff
 preview. Follow history/cursors when more decisions are present. Handoff
 previews include up to five next actions at 300 characters each and a truncation
 indicator. A complete-looking preview is still a preview.
@@ -54,10 +55,30 @@ indicator. A complete-looking preview is still a preview.
 }
 ```
 
-The query is a literal task phrase, not semantic search. With no query, selection
+The default `query_mode` is `literal`: a literal task phrase, not semantic search.
+With no query, selection
 prioritizes the latest handoff, active decisions newest first, then recent notes.
-Automatic modes consider at most200 candidates. Large records can be skipped
+Automatic modes consider at most 200 candidates. Large records can be skipped
 so smaller later records still fit. Records and project fields are never cut.
+
+For words spread across fields, explicitly pass `query_mode:"terms"` with a
+query. This mode extracts Unicode alphanumeric runs, folds ASCII case only,
+deduplicates in input order and accepts 1–8 distinct terms. Punctuation-only
+queries, more than eight distinct terms, or terms mode without a query fail
+validation. Each term matches a literal substring in the same human-facing
+fields as unified search; source pointers, IDs and authorship are excluded.
+There is no stemming, synonym inference or embedding model.
+
+Records matching any term are ranked across the whole project by distinct
+matched-term count descending, then headline-term count in title/decision/summary,
+then insertion sequence descending. Ranking happens before the 200-candidate
+window. Superseded decisions remain excluded from automatic selection.
+Terms results use `selection.mode:"terms"`, `selection.query_terms` and
+`selection.ranking:"term_coverage_then_headline_then_recency"`; complete records
+add `selection_reason:"ranked_term_match"` and ordered `matched_terms`.
+Ranking explains lexical coverage, not semantic relevance or factual confidence.
+Older v0.2 servers reject this new input field: inspect the discovered schema
+before using it; omit `query_mode` for a compatible literal request.
 
 Alternatively pass `record_ids` (1..20 unique IDs) to select complete records in
 your chosen order, including historical decisions. This mode is atomic: all
@@ -68,7 +89,7 @@ The result contains:
 
 - `project`: complete project fields.
 - `records`: complete record fields plus `selection_reason` (`explicit_selection`,
-  `literal_query_match`, `latest_handoff`, `active_decision` or `recent_note`).
+  `literal_query_match`, `ranked_term_match`, `latest_handoff`, `active_decision` or `recent_note`).
 - `selection`: mode, candidate count, candidate-window truncation, omissions by
   budget/record cap, and `selection_complete`.
 - `budget`: requested caps, `used_bytes`, `estimated_tokens` and `estimate_method`.
@@ -81,7 +102,7 @@ An oversized project/header or explicit selection returns `BUDGET_EXCEEDED`.
 **What the budget measures:** UTF-8 bytes of the canonical serialized SDK
 `CallToolResult`, including structured data, normal serialized JSON text fallback
 and accounting metadata. It excludes the outer JSON-RPC envelope. For an older
-negotiated protocol the SDK strips `resultType`, reducing wire size by24 bytes;
+negotiated protocol the SDK strips `resultType`, reducing wire size by 24 bytes;
 the canonical cap remains conservative. Token estimates are ceil(bytes/4), a
 heuristic, not a model tokenizer, provider usage receipt or guaranteed savings.
 The host may process the compatibility representations differently.
@@ -129,6 +150,11 @@ inspect history before retrying. The server cannot establish human consent from
 stdio. `--read-only` requires an existing archive and exposes only read tools.
 
 `doctor [--json]` inspects identity, schema, SQLite integrity and project/record
-counts without returning content or writing data. Exit codes:0 ready,2 missing,
+counts without returning content or writing data. Exit codes: 0 ready, 2 missing,
 1 error. `print-config` prints a JSON stdio example containing the current
 executable and absolute DB path. It does not modify settings or create files.
+
+v0.3 also provides explicit `init [--json]` and read-only `projects`, `search`,
+`record` and `context [--json]`. See [the CLI guide](cli.md) for flags, UUIDs,
+pagination, stdout/stderr and the distinction between canonical MCP budgets and
+rendered CLI output. No-subcommand MCP behavior is unchanged.

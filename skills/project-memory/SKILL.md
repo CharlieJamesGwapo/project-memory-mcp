@@ -1,18 +1,20 @@
 ---
 name: project-memory
-description: Use when a user invokes the Project Memory developer toolkit, asks for budgeted project recovery, or requests code review, agent coordination, or a security review with Project Memory context.
+description: Use when a user invokes the Project Memory developer toolkit, asks for budgeted project recovery, or requests debugging, delivery verification, code review, agent coordination, or a security review with Project Memory context.
 ---
 
 # Project Memory
 
 Use this one entry point for the requested developer workflow. Load only the
 selected route; a small request needs no full history scan or agent team.
-This pack targets the v0.2 retrieval contract and retains the v0.1 read fallback.
+This pack supports v0.2+ retrieval and retains the v0.1 read fallback.
 
 | User intent | Read when selected |
 |---|---|
 | Resume a saved project | [Resume](../resume-project/SKILL.md) |
 | Keep recovery context small | [Token saver](references/token-saver.md) |
+| Diagnose or fix a reported failure | [Debugging](references/debugging.md) |
+| Check whether a delivery is ready | [Verification](references/verification.md) |
 | Review a diff or change | [Code review](references/code-review.md) |
 | Plan or use multiple agents | [Agent team](references/agent-team.md) |
 | Audit security or installation behavior | [Security audit](references/security-audit.md) |

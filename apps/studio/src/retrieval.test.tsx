@@ -349,3 +349,157 @@ it("uses the context defaults, preserves task literals, and invalidates suggesti
     max_records: 8,
   });
 });
+
+it("uses explicit context presets and advanced custom caps without retrieving or applying on selection", async () => {
+  const f = await fixture();
+  const query = vi.spyOn(f.adapter, "query");
+  const apply = vi.fn(() => null);
+  render(<ContextSuggestions {...f} disabled={false} onApply={apply} onStale={() => false} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByText("Suggest context"));
+  expect(screen.getByRole("button", { name: "Balanced" }).getAttribute("aria-pressed")).toBe("true");
+  expect((screen.getByText("Advanced limits").closest("details") as HTMLDetailsElement).open).toBe(false);
+  query.mockClear();
+  for (const [name, bytes, records] of [["Small", 8000, 4], ["Balanced", 16000, 8], ["Expanded", 32000, 12]] as const) {
+    await user.click(screen.getByRole("button", { name }));
+    expect(query).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+    await screen.findByText(/Retrieval result:/);
+    expect(query).toHaveBeenLastCalledWith(f.session, "get_context_bundle", {
+      project_id: f.project.id,
+      max_bytes: bytes,
+      max_records: records,
+    });
+    expect(apply).not.toHaveBeenCalled();
+    query.mockClear();
+  }
+  await user.click(screen.getByText("Advanced limits"));
+  const bytes = screen.getByRole("spinbutton", { name: "Retrieval byte budget" });
+  await user.clear(bytes);
+  await user.type(bytes, "12000");
+  expect(screen.getByText("Custom limits")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Expanded" }).getAttribute("aria-pressed")).toBe("false");
+  expect(screen.queryByRole("button", { name: "Add suggestions" })).toBeNull();
+  expect(query).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await screen.findByText(/Retrieval result:/);
+  expect(query).toHaveBeenLastCalledWith(f.session, "get_context_bundle", {
+    project_id: f.project.id,
+    max_bytes: 12000,
+    max_records: 12,
+  });
+  await user.clear(bytes);
+  await user.click(screen.getByText("Advanced limits"));
+  query.mockClear();
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  expect((await screen.findByRole("alert")).textContent).toContain("4096–65536");
+  expect(query).not.toHaveBeenCalled();
+});
+
+it("opts into ranked terms explicitly, validates usable terms, and keeps literal defaults", async () => {
+  const f = await fixture();
+  const query = vi.spyOn(f.adapter, "query");
+  render(<ContextSuggestions {...f} disabled={false} onApply={() => null} onStale={() => false} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByText("Suggest context"));
+  expect(screen.queryByRole("radio", { name: "Any task terms" })).toBeNull();
+  await user.type(screen.getByRole("textbox", { name: "Context task phrase" }), "offline memory");
+  expect((screen.getByRole("radio", { name: "Literal phrase" }) as HTMLInputElement).checked).toBe(true);
+  await user.click(screen.getByRole("radio", { name: "Any task terms" }));
+  query.mockClear();
+  expect(query).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await screen.findByText(/Retrieval result:/);
+  expect(query).toHaveBeenLastCalledWith(f.session, "get_context_bundle", {
+    project_id: f.project.id,
+    query: "offline memory",
+    query_mode: "terms",
+    max_bytes: 16000,
+    max_records: 8,
+  });
+  expect(screen.getByText(/Ranked by distinct task terms/)).toBeTruthy();
+  await user.clear(screen.getByRole("textbox", { name: "Context task phrase" }));
+  await user.type(screen.getByRole("textbox", { name: "Context task phrase" }), "...?!");
+  await user.click(screen.getByRole("radio", { name: "Any task terms" }));
+  query.mockClear();
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  expect((await screen.findByRole("alert")).textContent).toContain("1–8 distinct");
+  expect(query).not.toHaveBeenCalled();
+});
+
+it("explains no matching candidates separately from whole records that exceed the budget", async () => {
+  const f = await fixture();
+  const original = f.adapter.query;
+  let oversized = false;
+  f.adapter.query = async (session, operation, args) => {
+    const value = await original<ContextBundle>(session, operation, {
+      ...args,
+      query: "does-not-match-a-sample",
+    });
+    if (oversized) {
+      value.selection.candidate_count = 2;
+      value.selection.omitted_by_budget = 2;
+      value.selection.selection_complete = false;
+    }
+    return value as never;
+  };
+  render(<ContextSuggestions {...f} disabled={false} onApply={() => null} onStale={() => false} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByText("Suggest context"));
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  expect(await screen.findByText(/No records matched this request/)).toBeTruthy();
+  oversized = true;
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  expect(await screen.findByText(/Matching records were too large/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Add suggestions" })).toBeNull();
+});
+
+it.each(["preset", "mode"] as const)("discards an in-flight response when the %s changes", async (control) => {
+  const f = await fixture();
+  const original = f.adapter.query;
+  let release: (() => void) | undefined;
+  let first = true;
+  f.adapter.query = async (session, operation, args) => {
+    if (operation === "get_context_bundle" && first) {
+      first = false;
+      await new Promise<void>((resolve) => { release = resolve; });
+    }
+    return original(session, operation, args);
+  };
+  const apply = vi.fn(() => null);
+  render(<ContextSuggestions {...f} disabled={false} onApply={apply} onStale={() => false} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByText("Suggest context"));
+  await user.type(screen.getByRole("textbox", { name: "Context task phrase" }), "offline");
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await waitFor(() => expect(release).toBeTypeOf("function"));
+  if (control === "preset") await user.click(screen.getByRole("button", { name: "Small" }));
+  else await user.click(screen.getByRole("radio", { name: "Any task terms" }));
+  await act(async () => { release?.(); });
+  expect(screen.queryByText(/Retrieval result:/)).toBeNull();
+  expect(screen.queryByRole("button", { name: "Add suggestions" })).toBeNull();
+  expect(apply).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await screen.findByText(/Retrieval result:/);
+});
+
+it("passes Rust-supported newer Unicode task terms through frontend validation intact", async () => {
+  const f = await fixture();
+  const query = vi.spyOn(f.adapter, "query");
+  render(<ContextSuggestions {...f} disabled={false} onApply={() => null} onStale={() => false} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByText("Suggest context"));
+  await user.click(screen.getByRole("textbox", { name: "Context task phrase" }));
+  await user.paste("API\u0558/rust\u{3D000}");
+  await user.click(screen.getByRole("radio", { name: "Any task terms" }));
+  await user.click(screen.getByRole("button", { name: "Build suggestions" }));
+  await screen.findByText(/Retrieval result:/);
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(query).toHaveBeenLastCalledWith(f.session, "get_context_bundle", {
+    project_id: f.project.id,
+    query: "API\u0558/rust\u{3D000}",
+    query_mode: "terms",
+    max_bytes: 16000,
+    max_records: 8,
+  });
+});

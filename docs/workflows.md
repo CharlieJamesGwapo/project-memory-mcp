@@ -72,6 +72,26 @@ paths, dependency advisories and available checks. It separates verified
 findings from unknowns. It does not run untrusted installers or live exploits,
 publish findings, or claim that a clean scan proves malware absence.
 
+## Debug and verify with current evidence
+
+> Use project-memory to investigate this failing check, make the authorized
+> correction, and report what you actually verified.
+
+The debugging route follows the reported input through the current source,
+reproduces the behavior where possible, distinguishes causes from hypotheses,
+and makes a correction only within the requested scope. It reuses a meaningful
+existing reproduction or adds a focused regression when the trigger is uncovered.
+The verification route maps delivery claims to actual current checks and states
+coverage gaps. A readiness assessment alone leaves source unchanged. Saved
+passing results cannot establish present readiness or grant publication permission.
+
+## Work from a terminal
+
+Run `project-memory-mcp init` explicitly to prepare an empty local archive.
+The [read-only CLI](cli.md) can list UUIDs, search, read complete records and
+compose Markdown/JSON context without starting a model. Existing memory still
+comes from explicit MCP saves; initialization adds no example projects.
+
 ## Inspect and compose visually
 
 In [Studio](studio.md), browse a project, inspect complete notes and decisions,
