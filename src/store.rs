@@ -38,10 +38,9 @@ fn timestamp() -> String {
 fn configure_wal(conn: &Connection, deadline: Instant) -> rusqlite::Result<()> {
     let timeout = Duration::from_secs(5);
     let result = loop {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        conn.busy_timeout(remaining)?;
+        startup_timeout(conn, deadline)?;
         match conn.execute_batch("PRAGMA journal_mode=WAL;") {
-            Ok(()) => break Ok(()),
+            Ok(()) => break startup_timeout(conn, deadline),
             Err(error)
                 if matches!(&error,
                     rusqlite::Error::SqliteFailure(code, _) if matches!(code.code,
@@ -284,6 +283,9 @@ impl Store {
         }
         startup_timeout(&transaction, deadline)?;
         transaction.commit()?;
+        // SQLite's busy handler tracks requested sleeps, not elapsed OS time;
+        // a delayed wake can finish after the wall-clock contention budget.
+        startup_timeout(&conn, deadline)?;
         // SQLite cannot switch journal modes inside the writer transaction.
         // Retry only lock contention; identity failures above never reach WAL.
         configure_wal(&conn, deadline)?;
@@ -806,5 +808,16 @@ impl Store {
         self.conn
             .execute("DELETE FROM projects WHERE id=?1", [&p.project_id])?;
         Ok(json!({"deleted":true,"project_id":p.project_id}))
+    }
+}
+
+#[cfg(test)]
+mod startup_deadline_tests {
+    use super::*;
+    #[test]
+    fn wal_setup_never_succeeds_after_an_expired_shared_deadline() {
+        let connection = Connection::open_in_memory().unwrap();
+        let expired = Instant::now() - Duration::from_millis(1);
+        assert!(configure_wal(&connection, expired).is_err());
     }
 }

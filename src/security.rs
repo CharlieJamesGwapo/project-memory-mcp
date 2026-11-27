@@ -288,14 +288,13 @@ pub(crate) fn validate_audit_destination(archive: &Path, audit: &Path) -> Result
                 .flat_map(char::to_uppercase)
                 .collect::<String>()
         };
-        let mut aliases = normalize(&audit) == normalize(&target);
+        let aliases = normalize(&audit) == normalize(&target);
         #[cfg(unix)]
-        {
+        let aliases = {
             use std::os::unix::fs::MetadataExt;
-            if let (Ok(a), Ok(b)) = (fs::metadata(&audit), fs::metadata(&target)) {
-                aliases |= a.dev() == b.dev() && a.ino() == b.ino();
-            }
-        }
+            aliases
+                || matches!((fs::metadata(&audit),fs::metadata(&target)), (Ok(a),Ok(b)) if a.dev()==b.dev()&&a.ino()==b.ino())
+        };
         if aliases {
             return Err(MemoryError::Validation(
                 "audit destination must differ from the archive and SQLite sidecars".into(),
