@@ -60,6 +60,11 @@ uses Python 3.11+ standard-library packing, eliminating the former npm MCPB buil
 dependency chain. The validator checks this repository's generated contract;
 it is not a general validator for third-party bundles.
 
+Use a clean checkout of the matching release tag when validating a downloaded
+bundle. The validator compares supporting asset bytes with that checkout;
+modified docs/skills or a newer `main` can correctly fail an older bundle's
+validation. For v0.2.1 use the `v0.2.1` source, not a modified working tree.
+
 After obtaining/checking real platform binaries and making a universal macOS
 server with `lipo -create`:
 

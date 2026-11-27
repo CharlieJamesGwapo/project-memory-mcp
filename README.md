@@ -117,6 +117,7 @@ These provide scoped evidence, not a guarantee of malware absence. Read the
 | [Security](docs/security.md) | Threat model, actual audit limits, upstream warnings and release integrity |
 | [Troubleshooting](docs/troubleshooting.md) | Common setup, query, budget, SQLite and desktop problems |
 | [Publishing](docs/publishing.md) | Versioned builds, standard-library MCPB packing, provenance and MCP Registry |
+| [Release evidence](docs/releases/0.2.1-verification.md) | Verified source, checks, public download hashes and provenance commands |
 | [Contributing](CONTRIBUTING.md) | Tests, platform checks and contribution expectations |
 | [Changelog](CHANGELOG.md) | Changes and compatibility |
 
